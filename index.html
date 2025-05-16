@@ -14,7 +14,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1050px; /* Wider for more info */
+            max-width: 1050px;
             margin: 20px auto;
             background-color: #fff;
             padding: 25px;
@@ -30,9 +30,6 @@
             border-bottom: 2px solid #eee;
             padding-bottom: 10px;
         }
-        h3 {
-            margin-top: 20px;
-        }
         button {
             background-color: #6a5acd; /* SlateBlue */
             color: white;
@@ -47,6 +44,12 @@
         button:hover {
             background-color: #483d8b; /* DarkSlateBlue */
         }
+        button.positive-action {
+            background-color: #28a745; /* Green */
+        }
+        button.positive-action:hover {
+            background-color: #218838;
+        }
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
@@ -55,7 +58,7 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        .character-card {
+        .character-card { /* Used for draft and final party display before game */
             background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -87,9 +90,7 @@
             display: flex;
             gap: 20px;
         }
-        .draft-pool-column {
-            flex: 2;
-        }
+        .draft-pool-column { flex: 2; }
         .selected-party-column {
             flex: 1;
             background-color: #e9e4f7;
@@ -97,18 +98,82 @@
             border-radius: 5px;
             border: 1px solid #c5b9e8;
         }
-        .selected-party-column .character-card {
-            background-color: #fff;
-        }
-        #partyStatus {
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
+        .selected-party-column .character-card { background-color: #fff; }
+        #partyStatus { font-weight: bold; margin-bottom: 15px; }
         .gear-section h5 {
-            margin-bottom: 5px;
-            margin-top: 10px;
-            color: #4a3a71;
-            font-size: 1em;
+            margin-bottom: 5px; margin-top: 10px;
+            color: #4a3a71; font-size: 1em;
+        }
+
+        /* Game Area Specific Styles */
+        #gameArea {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #6a5acd;
+            border-radius: 5px;
+        }
+        #gameArea h2 { margin-bottom: 15px; }
+        #partyStatsDisplay {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .party-member-stats {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            width: calc(33.333% - 14px); /* Adjusted for gap, ensure it fits 3 across */
+            min-width: 280px;
+            box-sizing: border-box;
+        }
+        .party-member-stats h4 {
+            margin-top: 0; color: #6a5acd;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .party-member-stats ul {
+            list-style: none;
+            padding: 0;
+            font-size: 0.9em;
+        }
+        .party-member-stats li { margin-bottom: 4px; }
+        .party-member-stats strong { color: #555; }
+
+        #mapContainer {
+            text-align: center; /* Center the map and controls */
+            margin-top: 20px;
+        }
+        #mapDisplay {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 18px; /* Adjust for better visibility of ASCII */
+            line-height: 1.1; /* Tighter line height for grid look */
+            white-space: pre; /* Crucial for ASCII display */
+            background-color: #222; /* Dark background for map */
+            color: #ccc; /* Light color for map elements */
+            padding: 10px;
+            border: 1px solid #444;
+            display: inline-block; /* So it doesn't take full width */
+            margin-bottom: 10px;
+        }
+        .movement-controls button {
+            min-width: 50px; /* Ensure buttons have decent size */
+            margin: 3px;
+        }
+        #gameOutput { /* Now used for general game messages below map */
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8e8e8;
+            min-height: 50px;
+            text-align: left;
+            white-space: pre-wrap;
+            border-radius: 3px;
         }
     </style>
 </head>
@@ -116,115 +181,64 @@
     <div class="container">
         <h1>Text-Based RPG - Party Draft</h1>
 
-        <div class="draft-controls">
-            <label for="poolSize">Number of characters in draft pool:</label>
-            <input type="number" id="poolSize" value="8" min="3" max="20" style="width: 50px; padding: 5px; margin-right:10px;">
-            <button id="generatePoolBtn">Generate Draft Pool</button>
-            <button id="finalizePartyBtn" disabled>Finalize Party (0/3)</button>
-        </div>
-
-        <div class="columns-container">
-            <div class="draft-pool-column">
-                <h2>Available Recruits</h2>
-                <div id="draftPoolArea">
-                    <p>Click "Generate Draft Pool" to see available recruits.</p>
-                </div>
+        <div id="draftingInterface">
+            <!-- ... (drafting UI remains the same) ... -->
+            <div class="draft-controls">
+                <label for="poolSize">Number of characters in draft pool:</label>
+                <input type="number" id="poolSize" value="8" min="3" max="20" style="width: 50px; padding: 5px; margin-right:10px;">
+                <button id="generatePoolBtn">Generate Draft Pool</button>
+                <button id="finalizePartyBtn" disabled>Finalize Party (0/3)</button>
             </div>
-            <div class="selected-party-column">
-                <h2>Your Party</h2>
-                <div id="partyStatus">Selected: 0/3</div>
-                <div id="selectedPartyArea">
-                    <p>Draft characters from the left.</p>
-                </div>
+            <div class="columns-container">
+                <div class="draft-pool-column"><h2>Available Recruits</h2><div id="draftPoolArea"><p>Click "Generate Draft Pool"...</p></div></div>
+                <div class="selected-party-column"><h2>Your Party</h2><div id="partyStatus">Selected: 0/3</div><div id="selectedPartyArea"><p>Draft characters...</p></div></div>
             </div>
         </div>
 
-        <div id="finalPartyDisplay" style="display:none; margin-top: 30px;">
+        <div id="finalPartyDisplay" style="display:none; margin-top: 30px; text-align:center;">
             <h2>Your Final Party!</h2>
-            <!-- Content will be populated by JavaScript -->
+            <div id="finalPartyCardsContainer" style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;"></div>
+            <button id="beginGameBtn" class="positive-action" style="margin-top:20px;">Begin Your Adventure!</button>
         </div>
 
+        <div id="gameArea" style="display:none;">
+            <h2>The Adventure Begins!</h2>
+            <p id="gameIntroMessage" style="text-align:center; margin-bottom: 20px;"></p>
+            <div id="partyStatsDisplay"></div>
+
+            <div id="mapContainer">
+                <pre id="mapDisplay">Map will appear here...</pre>
+                <div class="movement-controls">
+                    <button id="moveNorthBtn">N</button><br>
+                    <button id="moveWestBtn">W</button>
+                    <span style="display: inline-block; width: 50px;"></span> <!-- Spacer -->
+                    <button id="moveEastBtn">E</button><br>
+                    <button id="moveSouthBtn">S</button>
+                </div>
+            </div>
+
+            <div id="gameOutput">
+                Game messages will appear here...
+            </div>
+        </div>
     </div>
 
     <script>
-        const namePools = { /* (Same as before) */
-            ancient_china: ["Mei", "Lian", "Bao", "Jiao", "Nuo", "Ai", "Fen", "Hua", "Jia", "Lan"],
-            egypt: ["Nefertari", "Merit", "Ankhesen", "Tiye", "Sitre", "Iset", "Kiya", "Mut"],
-            rome: ["Livia", "Julia", "Octavia", "Cornelia", "Antonia", "Flavia", "Claudia", "Marcia"],
-            medieval_europe: ["Genevieve", "Isolde", "Eleanor", "Matilda", "Adela", "Beatrice", "Blanche", "Constance"],
-            early_1900s: ["Evelyn", "Mary", "Elizabeth", "Dorothy", "Margaret", "Helen", "Florence", "Alice"],
-            modern: ["Alex", "Olivia", "Sophia", "Emily", "Chloe", "Maya", "Jordan", "Skyler"]
-        };
+        // --- Constants and Data (namePools, timePeriodConfig, gear, etc. remain same) ---
+        const namePools = { /* ... (same) ... */ ancient_china: ["Mei", "Lian", "Bao", "Jiao", "Nuo", "Ai", "Fen", "Hua", "Jia", "Lan"], egypt: ["Nefertari", "Merit", "Ankhesen", "Tiye", "Sitre", "Iset", "Kiya", "Mut"], rome: ["Livia", "Julia", "Octavia", "Cornelia", "Antonia", "Flavia", "Claudia", "Marcia"], medieval_europe: ["Genevieve", "Isolde", "Eleanor", "Matilda", "Adela", "Beatrice", "Blanche", "Constance"], early_1900s: ["Evelyn", "Mary", "Elizabeth", "Dorothy", "Margaret", "Helen", "Florence", "Alice"], modern: ["Alex", "Olivia", "Sophia", "Emily", "Chloe", "Maya", "Jordan", "Skyler"] };
         const timePeriodKeys = Object.keys(namePools);
-        const timePeriodDisplayNames = { /* (Same as before) */
-            ancient_china: "Ancient China (Noblewoman)", egypt: "Ancient Egypt", rome: "Ancient Rome",
-            medieval_europe: "Medieval Europe", early_1900s: "Early 1900s", modern: "Modern Era"
-        };
-
-        const periodStatConfig = { /* (Same as before, for non-gear-derived stats) */
-            ancient_china: { bladderMin: 300, bladderMax: 600, bowelMin: 150, bowelMax: 350, stinkRateMin: 4, stinkRateMax: 8 },
-            egypt: { bladderMin: 280, bladderMax: 580, bowelMin: 160, bowelMax: 380, stinkRateMin: 5, stinkRateMax: 9 },
-            rome: { bladderMin: 320, bladderMax: 620, bowelMin: 140, bowelMax: 340, stinkRateMin: 4, stinkRateMax: 8 },
-            medieval_europe: { bladderMin: 250, bladderMax: 550, bowelMin: 180, bowelMax: 400, stinkRateMin: 6, stinkRateMax: 10 },
-            early_1900s: { bladderMin: 350, bladderMax: 650, bowelMin: 120, bowelMax: 300, stinkRateMin: 3, stinkRateMax: 7 },
-            modern: { bladderMin: 380, bladderMax: 700, bowelMin: 100, bowelMax: 280, stinkRateMin: 1, stinkRateMax: 5 }
-        };
-
-        // Base stats that are NOT period-specific or gear-derived
+        const timePeriodDisplayNames = { /* ... (same) ... */ ancient_china: "Ancient China (Noblewoman)", egypt: "Ancient Egypt", rome: "Ancient Rome", medieval_europe: "Medieval Europe", early_1900s: "Early 1900s", modern: "Modern Era" };
+        const periodStatConfig = { /* ... (same) ... */ ancient_china: { bladderMin: 300, bladderMax: 600, bowelMin: 150, bowelMax: 350, stinkRateMin: 4, stinkRateMax: 8 }, egypt: { bladderMin: 280, bladderMax: 580, bowelMin: 160, bowelMax: 380, stinkRateMin: 5, stinkRateMax: 9 }, rome: { bladderMin: 320, bladderMax: 620, bowelMin: 140, bowelMax: 340, stinkRateMin: 4, stinkRateMax: 8 }, medieval_europe: { bladderMin: 250, bladderMax: 550, bowelMin: 180, bowelMax: 400, stinkRateMin: 6, stinkRateMax: 10 }, early_1900s: { bladderMin: 350, bladderMax: 650, bowelMin: 120, bowelMax: 300, stinkRateMin: 3, stinkRateMax: 7 }, modern: { bladderMin: 380, bladderMax: 700, bowelMin: 100, bowelMax: 280, stinkRateMin: 1, stinkRateMax: 5 } };
         const baseStatsToRoll = ['magicPower'];
-        // All stat keys for character object creation and display order (Strength & Defense will be calculated)
         const allStatKeys = ['bladderSize', 'bowelSize', 'stinkRate', 'magicPower', 'strength', 'defense'];
-
         const gearSlots = ["underwear", "upper", "lower", "head", "hands", "accessory"];
-        const periodGear = {
-            ancient_china: {
-                underwear: [{name: "Silk Dudou", defense_bonus: 1}, {name: "Linen Bindings"}],
-                upper: [{name: "Embroidered Ruqun Blouse", defense_bonus: 1}, {name: "Silk Hanfu Robe", defense_bonus: 2}],
-                lower: [{name: "Layered Ruqun Skirt", defense_bonus: 1}, {name: "Silk Trousers"}],
-                head: [{name: "Ornamental Hairpins"}, {name: "Phoenix Coronet", defense_bonus: 1}, {name: "Simple Silk Headdress"}],
-                hands: [{name: "Ceremonial Dagger", strength_bonus: 1}, {name: "Ornate Fan", strength_bonus: 0}, {name: "Writing Brush"}],
-                accessory: [{name: "Jade Pendant"}, {name: "Scented Sachet"}, {name: "Embroidered Pouch"}]
-            },
-            egypt: {
-                underwear: [{name: "Linen Loincloth"}, {name: "Simple Linen Wrap"}],
-                upper: [{name: "Fine Kalasiris", defense_bonus: 1}, {name: "Beaded Net Dress", defense_bonus: 1}, {name: "Linen Shawl"}],
-                lower: [{name: "Linen Kilt"}, {name: "Sheath Skirt (part of Kalasiris)"}],
-                head: [{name: "Nemes Headdress", defense_bonus: 1}, {name: "Simple Linen Headband"}, {name: "Ceremonial Wig"}],
-                hands: [{name: "Khopesh (Small)", strength_bonus: 2}, {name: "Sistrum (Ritual Rattle)"}, {name: "Papyrus Scroll"}],
-                accessory: [{name: "Usekh Collar Necklace", defense_bonus: 1}, {name: "Gold Armlets"}, {name: "Scarab Amulet"}]
-            },
-            rome: {
-                underwear: [{name: "Subligaculum"}, {name: "Strophium Breast Band"}],
-                upper: [{name: "Linen Tunica", defense_bonus: 1}, {name: "Wool Stola", defense_bonus: 1}, {name: "Palla Shawl"}],
-                lower: [{name: "Toga (outer, implies tunic)"}, {name: "Long Tunica Skirt"}],
-                head: [{name: "Vitta Headband"}, {name: "Ornate Hairpins"}, {name: "Simple Veil"}],
-                hands: [{name: "Pugio Dagger", strength_bonus: 1}, {name: "Stylus and Wax Tablet"}, {name: "Scroll Case"}],
-                accessory: [{name: "Fibula Brooch"}, {name: "Gold Earrings"}, {name: "Signet Ring"}]
-            },
-            medieval_europe: {
-                underwear: [{name: "Linen Chemise", defense_bonus: 1}, {name: "Linen Braies"}],
-                upper: [{name: "Kirtle Gown", defense_bonus: 1}, {name: "Surcote Overgown", defense_bonus: 2}, {name: "Padded Aketon", defense_bonus: 3}],
-                lower: [{name: "Hose Stockings"}, {name: "Flowing Gown Skirt", defense_bonus: 1}],
-                head: [{name: "Wimple and Veil"}, {name: "Coif Cap"}, {name: "Steel Cap", defense_bonus: 2}, {name: "Simple Hood"}],
-                hands: [{name: "Rondel Dagger", strength_bonus: 2}, {name: "Shortsword", strength_bonus: 3, defense_bonus: 1}, {name: "Book of Hours"}, {name: "Staff", strength_bonus: 1}],
-                accessory: [{name: "Leather Belt with Pouch"}, {name: "Rosary Beads"}, {name: "Cloak Clasp"}]
-            },
-            early_1900s: {
-                underwear: [{name: "Corset & Chemise Set"}, {name: "Knickers & Camisole"}],
-                upper: [{name: "High-Neck Blouse"}, {name: "Tailored Jacket", defense_bonus: 1}, {name: "Walking Suit Bodice"}],
-                lower: [{name: "Long Gored Skirt"}, {name: "Ankle-length Day Skirt"}],
-                head: [{name: "Wide-brimmed Hat"}, {name: "Bonnet"}, {name: "Cloche Hat"}],
-                hands: [{name: "Hat Pin (Makeshift)", strength_bonus: 1}, {name: "Small Derringer Pistol", strength_bonus: 2}, {name: "Book"}, {name: "Knitting Needles"}],
-                accessory: [{name: "Long Gloves"}, {name: "Parasol"}, {name: "Reticule Handbag"}, {name: "Locket"}]
-            },
-            modern: {
-                underwear: [{name: "Bra & Panties Set"}, {name: "Bodysuit"}, {name: "Sports Attire"}],
-                upper: [{name: "T-Shirt"}, {name: "Blouse"}, {name: "Leather Jacket", defense_bonus: 2}, {name: "Hoodie", defense_bonus: 1}],
-                lower: [{name: "Jeans", defense_bonus: 1}, {name: "Skirt"}, {name: "Tactical Pants", defense_bonus: 1}],
-                head: [{name: "Baseball Cap"}, {name: "Beanie"}, {name: "Combat Helmet", defense_bonus: 3}, {name: "Sunglasses"}],
-                hands: [{name: "Pocket Knife", strength_bonus: 1}, {name: "Taser", strength_bonus: 1}, {name: "Pepper Spray"}, {name: "Empty Hands"} , {name: "Heavy Wrench", strength_bonus: 2}],
-                accessory: [{name: "Smartphone"}, {name: "Smartwatch"}, {name: "Backpack"}, {name: "Messenger Bag"}]
-            }
+        const periodGear = { /* ... (same extensive structure) ... */
+            ancient_china: { underwear: [{name: "Silk Dudou", defense_bonus: 1}, {name: "Linen Bindings"}], upper: [{name: "Embroidered Ruqun Blouse", defense_bonus: 1}, {name: "Silk Hanfu Robe", defense_bonus: 2}], lower: [{name: "Layered Ruqun Skirt", defense_bonus: 1}, {name: "Silk Trousers"}], head: [{name: "Ornamental Hairpins"}, {name: "Phoenix Coronet", defense_bonus: 1}, {name: "Simple Silk Headdress"}], hands: [{name: "Ceremonial Dagger", strength_bonus: 1}, {name: "Ornate Fan"}, {name: "Writing Brush"}], accessory: [{name: "Jade Pendant"}, {name: "Scented Sachet"}, {name: "Embroidered Pouch"}]},
+            egypt: { underwear: [{name: "Linen Loincloth"}, {name: "Simple Linen Wrap"}], upper: [{name: "Fine Kalasiris", defense_bonus: 1}, {name: "Beaded Net Dress", defense_bonus: 1}, {name: "Linen Shawl"}], lower: [{name: "Linen Kilt"}, {name: "Sheath Skirt (part of Kalasiris)"}], head: [{name: "Nemes Headdress", defense_bonus: 1}, {name: "Simple Linen Headband"}, {name: "Ceremonial Wig"}], hands: [{name: "Khopesh (Small)", strength_bonus: 2}, {name: "Sistrum (Ritual Rattle)"}, {name: "Papyrus Scroll"}], accessory: [{name: "Usekh Collar Necklace", defense_bonus: 1}, {name: "Gold Armlets"}, {name: "Scarab Amulet"}]},
+            rome: { underwear: [{name: "Subligaculum"}, {name: "Strophium Breast Band"}], upper: [{name: "Linen Tunica", defense_bonus: 1}, {name: "Wool Stola", defense_bonus: 1}, {name: "Palla Shawl"}], lower: [{name: "Toga (outer, implies tunic)"}, {name: "Long Tunica Skirt"}], head: [{name: "Vitta Headband"}, {name: "Ornate Hairpins"}, {name: "Simple Veil"}], hands: [{name: "Pugio Dagger", strength_bonus: 1}, {name: "Stylus and Wax Tablet"}, {name: "Scroll Case"}], accessory: [{name: "Fibula Brooch"}, {name: "Gold Earrings"}, {name: "Signet Ring"}]},
+            medieval_europe: { underwear: [{name: "Linen Chemise", defense_bonus: 1}, {name: "Linen Braies"}], upper: [{name: "Kirtle Gown", defense_bonus: 1}, {name: "Surcote Overgown", defense_bonus: 2}, {name: "Padded Aketon", defense_bonus: 3}], lower: [{name: "Hose Stockings"}, {name: "Flowing Gown Skirt", defense_bonus: 1}], head: [{name: "Wimple and Veil"}, {name: "Coif Cap"}, {name: "Steel Cap", defense_bonus: 2}, {name: "Simple Hood"}], hands: [{name: "Rondel Dagger", strength_bonus: 2}, {name: "Shortsword", strength_bonus: 3, defense_bonus: 1}, {name: "Book of Hours"}, {name: "Staff", strength_bonus: 1}], accessory: [{name: "Leather Belt with Pouch"}, {name: "Rosary Beads"}, {name: "Cloak Clasp"}]},
+            early_1900s: { underwear: [{name: "Corset & Chemise Set"}, {name: "Knickers & Camisole"}], upper: [{name: "High-Neck Blouse"}, {name: "Tailored Jacket", defense_bonus: 1}, {name: "Walking Suit Bodice"}], lower: [{name: "Long Gored Skirt"}, {name: "Ankle-length Day Skirt"}], head: [{name: "Wide-brimmed Hat"}, {name: "Bonnet"}, {name: "Cloche Hat"}], hands: [{name: "Hat Pin (Makeshift)", strength_bonus: 1}, {name: "Small Derringer Pistol", strength_bonus: 2}, {name: "Book"}, {name: "Knitting Needles"}], accessory: [{name: "Long Gloves"}, {name: "Parasol"}, {name: "Reticule Handbag"}, {name: "Locket"}]},
+            modern: { underwear: [{name: "Bra & Panties Set"}, {name: "Bodysuit"}, {name: "Sports Attire"}], upper: [{name: "T-Shirt"}, {name: "Blouse"}, {name: "Leather Jacket", defense_bonus: 2}, {name: "Hoodie", defense_bonus: 1}], lower: [{name: "Jeans", defense_bonus: 1}, {name: "Skirt"}, {name: "Tactical Pants", defense_bonus: 1}], head: [{name: "Baseball Cap"}, {name: "Beanie"}, {name: "Combat Helmet", defense_bonus: 3}, {name: "Sunglasses"}], hands: [{name: "Pocket Knife", strength_bonus: 1}, {name: "Taser", strength_bonus: 1}, {name: "Pepper Spray"}, {name: "Empty Hands"} , {name: "Heavy Wrench", strength_bonus: 2}], accessory: [{name: "Smartphone"}, {name: "Smartwatch"}, {name: "Backpack"}, {name: "Messenger Bag"}]}
         };
 
         let draftableCharacters = [];
@@ -232,6 +246,7 @@
         const MAX_PARTY_SIZE = 3;
 
         // DOM Elements
+        const draftingInterface = document.getElementById('draftingInterface');
         const generatePoolBtn = document.getElementById('generatePoolBtn');
         const finalizePartyBtn = document.getElementById('finalizePartyBtn');
         const poolSizeInput = document.getElementById('poolSize');
@@ -239,213 +254,186 @@
         const selectedPartyArea = document.getElementById('selectedPartyArea');
         const partyStatusDiv = document.getElementById('partyStatus');
         const finalPartyDisplay = document.getElementById('finalPartyDisplay');
+        const finalPartyCardsContainer = document.getElementById('finalPartyCardsContainer');
+        const beginGameBtn = document.getElementById('beginGameBtn');
+        const gameArea = document.getElementById('gameArea');
+        const gameIntroMessage = document.getElementById('gameIntroMessage');
+        const partyStatsDisplay = document.getElementById('partyStatsDisplay');
+        const mapDisplay = document.getElementById('mapDisplay'); // Map display element
+        const gameOutput = document.getElementById('gameOutput');
 
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+        // Map Variables
+        const MAP_WIDTH = 20;
+        const MAP_HEIGHT = 10;
+        let gameMap = [];
+        let playerPosition = { row: 0, col: 0 };
 
+        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
         function getRandomElement(arr) {
-            if (!arr || arr.length === 0) return { name: "None", defense_bonus: 0, strength_bonus: 0 }; // Default gear item
+            if (!arr || arr.length === 0) {
+                if (this && this.isGearCall) { return { name: "None", defense_bonus: 0, strength_bonus: 0 }; }
+                return "N/A";
+            }
             return arr[getRandomInt(0, arr.length - 1)];
         }
-
-        function generateRandomCharacter(id) {
+        function generateRandomCharacter(id) { /* ... (same as before) ... */
             const randomPeriodKey = getRandomElement(timePeriodKeys);
             const names = namePools[randomPeriodKey];
-            const randomName = getRandomElement(names).name; // If names also became objects, adjust here
+            const randomName = getRandomElement(names);
             const config = periodStatConfig[randomPeriodKey];
             const gearConfig = periodGear[randomPeriodKey];
-
-            const character = {
-                id: `char_${id}_${Date.now()}`,
-                name: randomName,
-                timePeriodKey: randomPeriodKey,
-                timePeriodDisplay: timePeriodDisplayNames[randomPeriodKey],
-                stats: {},
-                gear: {},
-                appearance: `A woman from ${timePeriodDisplayNames[randomPeriodKey]}.`,
-                backstory: "Her past is shrouded in mystery.",
-                skills: "Versatile."
-            };
-
-            // Period-specific stats (Bladder, Bowel, StinkRate)
+            const character = { id: `char_${id}_${Date.now()}`, name: randomName, timePeriodKey: randomPeriodKey, timePeriodDisplay: timePeriodDisplayNames[randomPeriodKey], stats: {}, gear: {}, appearance: `A woman from ${timePeriodDisplayNames[randomPeriodKey]}.`, backstory: "Her past is shrouded in mystery.", skills: "Versatile." };
             character.stats.bladderSize = getRandomInt(config.bladderMin, config.bladderMax);
             character.stats.bowelSize = getRandomInt(config.bowelMin, config.bowelMax);
             character.stats.stinkRate = getRandomInt(config.stinkRateMin, config.stinkRateMax);
-
-            // Base stats to roll (MagicPower)
-            baseStatsToRoll.forEach(stat => {
-                character.stats[stat] = getRandomInt(1, 10); // Assuming magic power is 1-10
-            });
-
-            // Initialize gear-derived stats
-            character.stats.strength = 0;
-            character.stats.defense = 0;
-
-            // Assign Gear and calculate bonuses
+            baseStatsToRoll.forEach(stat => { character.stats[stat] = getRandomInt(1, 10); });
+            character.stats.strength = 0; character.stats.defense = 0;
             gearSlots.forEach(slot => {
-                const selectedGearItem = getRandomElement(gearConfig[slot]);
+                const selectedGearItem = getRandomElement.call({isGearCall: true}, gearConfig[slot]);
                 character.gear[slot] = selectedGearItem;
                 character.stats.defense += (selectedGearItem.defense_bonus || 0);
                 character.stats.strength += (selectedGearItem.strength_bonus || 0);
             });
-
             return character;
         }
-
-        function renderCharacterCard(character, isDraftable = true) {
-            const card = document.createElement('div');
-            card.classList.add('character-card');
-            card.dataset.characterId = character.id;
-
-            let statsHtml = '<ul>';
-            allStatKeys.forEach(statKey => {
-                let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1);
-                if (statKey === "stinkRate") statLabel = "Stinkiness Rate";
-                let statValue = character.stats[statKey];
-                if (statKey === "bladderSize") statValue += " mL";
-                if (statKey === "bowelSize") statValue += " g";
-                statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`;
-            });
-            statsHtml += '</ul>';
-
-            let gearHtml = '<div class="gear-section"><h5>Gear:</h5><ul>';
-            gearSlots.forEach(slot => {
-                const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1);
-                const item = character.gear[slot];
-                let itemName = item ? item.name : "None";
-                let bonuses = [];
-                if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`);
-                if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`);
-                let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : "";
-                gearHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`;
-            });
-            gearHtml += '</ul></div>';
-
-            card.innerHTML = `
-                <h4>${character.name}</h4>
-                <p><strong>Period:</strong> ${character.timePeriodDisplay}</p>
-                <div><strong>Stats:</strong>${statsHtml}</div>
-                ${gearHtml}
-                <p><em>${character.appearance}</em></p>
-            `;
-
-            if (isDraftable) {
-                const draftButton = document.createElement('button');
-                draftButton.textContent = 'Draft this Character';
-                draftButton.onclick = () => handleDraftCharacter(character.id);
-                card.appendChild(draftButton);
-            } else {
-                const removeButton = document.createElement('button');
-                removeButton.textContent = 'Remove from Party';
-                removeButton.style.backgroundColor = '#dc3545';
-                removeButton.onclick = () => handleRemoveCharacter(character.id);
-                card.appendChild(removeButton);
-            }
+        function renderCharacterCard(character, isDraftable = true, isFinalView = false) { /* ... (same as before) ... */
+            const card = document.createElement('div'); card.classList.add('character-card'); if (isFinalView) card.style.width = "300px"; card.dataset.characterId = character.id;
+            let statsHtml = '<ul>'; allStatKeys.forEach(statKey => { let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1); if (statKey === "stinkRate") statLabel = "Stinkiness Rate"; let statValue = character.stats[statKey]; if (statKey === "bladderSize") statValue += " mL"; if (statKey === "bowelSize") statValue += " g"; statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`; }); statsHtml += '</ul>';
+            let gearHtml = '<div class="gear-section"><h5>Gear:</h5><ul>'; gearSlots.forEach(slot => { const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1); const item = character.gear[slot]; let itemName = item ? item.name : "None"; let bonuses = []; if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`); if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`); let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : ""; gearHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`; }); gearHtml += '</ul></div>';
+            card.innerHTML = `<h4>${character.name}</h4><p><strong>Period:</strong> ${character.timePeriodDisplay}</p><div><strong>Stats:</strong>${statsHtml}</div>${gearHtml}<p><em>${character.appearance}</em></p>`;
+            if (!isFinalView) { if (isDraftable) { const btn = document.createElement('button'); btn.textContent = 'Draft'; btn.onclick = () => handleDraftCharacter(character.id); card.appendChild(btn); } else { const btn = document.createElement('button'); btn.textContent = 'Remove'; btn.style.backgroundColor = '#dc3545'; btn.onclick = () => handleRemoveCharacter(character.id); card.appendChild(btn); } }
             return card;
         }
+        function displayDraftPool() { /* ... (same as before) ... */
+            draftPoolArea.innerHTML = ''; if (draftableCharacters.length === 0) { draftPoolArea.innerHTML = '<p>No characters generated yet.</p>'; return; }
+            draftableCharacters.forEach(char => { if (!selectedParty.find(pChar => pChar.id === char.id)) { draftPoolArea.appendChild(renderCharacterCard(char, true, false)); } });
+            if (draftPoolArea.childElementCount === 0 && draftableCharacters.length > 0) { draftPoolArea.innerHTML = '<p>All drafted.</p>';}
+        }
+        function displaySelectedParty() { /* ... (same as before) ... */
+            selectedPartyArea.innerHTML = ''; if (selectedParty.length === 0) { selectedPartyArea.innerHTML = '<p>Draft characters.</p>'; } else { selectedParty.forEach(char => { selectedPartyArea.appendChild(renderCharacterCard(char, false, false)); }); }
+            partyStatusDiv.textContent = `Selected: ${selectedParty.length}/${MAX_PARTY_SIZE}`; finalizePartyBtn.textContent = `Finalize Party (${selectedParty.length}/${MAX_PARTY_SIZE})`; finalizePartyBtn.disabled = selectedParty.length !== MAX_PARTY_SIZE;
+            const draftButtons = draftPoolArea.querySelectorAll('.character-card button'); draftButtons.forEach(btn => { const card = btn.closest('.character-card'); if (card) { const charId = card.dataset.characterId; btn.disabled = selectedParty.find(pChar => pChar.id === charId) || selectedParty.length >= MAX_PARTY_SIZE; }});
+        }
+        function handleDraftCharacter(characterId) { /* ... (same as before) ... */ if (selectedParty.length >= MAX_PARTY_SIZE) { alert(`Max ${MAX_PARTY_SIZE} party members.`); return; } const charToAdd = draftableCharacters.find(char => char.id === characterId); if (charToAdd && !selectedParty.find(pChar => pChar.id === charToAdd.id)) { selectedParty.push(charToAdd); displaySelectedParty(); displayDraftPool(); } }
+        function handleRemoveCharacter(characterId) { /* ... (same as before) ... */ selectedParty = selectedParty.filter(char => char.id !== characterId); displaySelectedParty(); displayDraftPool(); }
+        generatePoolBtn.addEventListener('click', () => { /* ... (same as before) ... */ const numToGenerate = parseInt(poolSizeInput.value) || 8; draftableCharacters = []; selectedParty = []; for (let i = 0; i < numToGenerate; i++) { draftableCharacters.push(generateRandomCharacter(i)); } finalPartyDisplay.style.display = 'none'; draftingInterface.style.display = 'block'; gameArea.style.display = 'none'; displayDraftPool(); displaySelectedParty(); });
+        finalizePartyBtn.addEventListener('click', () => { /* ... (same as before) ... */ if (selectedParty.length === MAX_PARTY_SIZE) { console.log("Final Party:", selectedParty); finalPartyCardsContainer.innerHTML = ''; selectedParty.forEach(char => { finalPartyCardsContainer.appendChild(renderCharacterCard(char, false, true)); }); draftingInterface.style.display = 'none'; finalPartyDisplay.style.display = 'block'; gameArea.style.display = 'none'; } else { alert(`Select ${MAX_PARTY_SIZE} characters.`); } });
 
-        // --- displayDraftPool, displaySelectedParty, handleDraftCharacter, handleRemoveCharacter ---
-        // --- generatePoolBtn, finalizePartyBtn event listeners ---
-        // (These functions remain largely the same as in the previous version, their core logic
-        // for managing arrays and DOM updates doesn't need to change for this feature.
-        // The key is that they call renderCharacterCard which now handles the new gear and stats.)
 
-        function displayDraftPool() {
-            draftPoolArea.innerHTML = '';
-            if (draftableCharacters.length === 0) {
-                draftPoolArea.innerHTML = '<p>No characters generated yet.</p>'; return;
-            }
-            draftableCharacters.forEach(char => {
-                if (!selectedParty.find(pChar => pChar.id === char.id)) {
-                    const card = renderCharacterCard(char, true);
-                    draftPoolArea.appendChild(card);
+        // --- MAP FUNCTIONS ---
+        function generateGameMap() {
+            gameMap = [];
+            for (let r = 0; r < MAP_HEIGHT; r++) {
+                const row = [];
+                for (let c = 0; c < MAP_WIDTH; c++) {
+                    // Simple random walls - adjust probability as needed
+                    if (Math.random() < 0.2) { // 20% chance of a wall
+                        row.push('#');
+                    } else {
+                        row.push('.');
+                    }
                 }
-            });
-            if (draftPoolArea.childElementCount === 0 && draftableCharacters.length > 0) {
-                draftPoolArea.innerHTML = '<p>All available recruits have been drafted or are in your party.</p>';
+                gameMap.push(row);
             }
-        }
 
-        function displaySelectedParty() {
-            selectedPartyArea.innerHTML = '';
-            if (selectedParty.length === 0) {
-                selectedPartyArea.innerHTML = '<p>Draft characters from the left.</p>';
-            } else {
-                selectedParty.forEach(char => {
-                    const card = renderCharacterCard(char, false);
-                    selectedPartyArea.appendChild(card);
-                });
-            }
-            partyStatusDiv.textContent = `Selected: ${selectedParty.length}/${MAX_PARTY_SIZE}`;
-            finalizePartyBtn.textContent = `Finalize Party (${selectedParty.length}/${MAX_PARTY_SIZE})`;
-            finalizePartyBtn.disabled = selectedParty.length !== MAX_PARTY_SIZE;
-
-            const draftButtons = draftPoolArea.querySelectorAll('.character-card button');
-            draftButtons.forEach(btn => {
-                const card = btn.closest('.character-card');
-                if (card) {
-                    const charId = card.dataset.characterId;
-                    btn.disabled = selectedParty.find(pChar => pChar.id === charId) || selectedParty.length >= MAX_PARTY_SIZE;
+            // Place player randomly on an empty spot
+            let placed = false;
+            while (!placed) {
+                const r = getRandomInt(0, MAP_HEIGHT - 1);
+                const c = getRandomInt(0, MAP_WIDTH - 1);
+                if (gameMap[r][c] === '.') {
+                    playerPosition = { row: r, col: c };
+                    // Don't place '@' in gameMap data directly yet, renderMap will do it
+                    placed = true;
                 }
-            });
-        }
-
-        function handleDraftCharacter(characterId) {
-            if (selectedParty.length >= MAX_PARTY_SIZE) {
-                alert(`You can only have ${MAX_PARTY_SIZE} characters in your party.`); return;
-            }
-            const characterToAdd = draftableCharacters.find(char => char.id === characterId);
-            if (characterToAdd && !selectedParty.find(pChar => pChar.id === characterId)) {
-                selectedParty.push(characterToAdd);
-                displaySelectedParty();
-                displayDraftPool();
             }
         }
 
-        function handleRemoveCharacter(characterId) {
-            selectedParty = selectedParty.filter(char => char.id !== characterId);
-            displaySelectedParty();
-            displayDraftPool();
+        function renderGameMap() {
+            let mapString = "";
+            for (let r = 0; r < MAP_HEIGHT; r++) {
+                for (let c = 0; c < MAP_WIDTH; c++) {
+                    if (r === playerPosition.row && c === playerPosition.col) {
+                        mapString += '@';
+                    } else {
+                        mapString += gameMap[r][c];
+                    }
+                }
+                mapString += '\n'; // Newline for each row
+            }
+            mapDisplay.textContent = mapString.trim(); // Trim trailing newline
         }
 
-        generatePoolBtn.addEventListener('click', () => {
-            const numToGenerate = parseInt(poolSizeInput.value) || 8;
-            draftableCharacters = [];
-            selectedParty = [];
-            for (let i = 0; i < numToGenerate; i++) {
-                draftableCharacters.push(generateRandomCharacter(i));
+        function movePlayer(dRow, dCol) {
+            const newRow = playerPosition.row + dRow;
+            const newCol = playerPosition.col + dCol;
+
+            // Check boundaries
+            if (newRow < 0 || newRow >= MAP_HEIGHT || newCol < 0 || newCol >= MAP_WIDTH) {
+                gameOutput.textContent = "You can't move off the edge of the map!";
+                return;
             }
+
+            // Check for obstacles
+            if (gameMap[newRow][newCol] === '#') {
+                gameOutput.textContent = "You bump into a wall!";
+                return;
+            }
+
+            // Valid move
+            playerPosition.row = newRow;
+            playerPosition.col = newCol;
+            gameOutput.textContent = "You moved."; // Simple feedback
+            renderGameMap();
+        }
+
+        // Movement button event listeners
+        document.getElementById('moveNorthBtn').addEventListener('click', () => movePlayer(-1, 0));
+        document.getElementById('moveSouthBtn').addEventListener('click', () => movePlayer(1, 0));
+        document.getElementById('moveEastBtn').addEventListener('click', () => movePlayer(0, 1));
+        document.getElementById('moveWestBtn').addEventListener('click', () => movePlayer(0, -1));
+
+
+        // MODIFIED beginGameBtn listener
+        beginGameBtn.addEventListener('click', () => {
             finalPartyDisplay.style.display = 'none';
-            document.querySelector('.columns-container').style.display = 'flex';
-            displayDraftPool();
-            displaySelectedParty();
-        });
+            gameArea.style.display = 'block';
 
-        finalizePartyBtn.addEventListener('click', () => {
-            if (selectedParty.length === MAX_PARTY_SIZE) {
-                alert("Party finalized! Let the adventure begin!");
-                console.log("Final Party:", selectedParty);
+            const partyNames = selectedParty.map(char => char.name).join(', ');
+            gameIntroMessage.textContent = `Your adventure begins with: ${partyNames}!`;
 
-                finalPartyDisplay.innerHTML = '<h2>Your Final Party!</h2>';
-                selectedParty.forEach(char => {
-                    const card = renderCharacterCard(char, false);
-                    const buttonInCard = card.querySelector('button');
-                    if (buttonInCard) buttonInCard.remove();
-                    finalPartyDisplay.appendChild(card);
+            partyStatsDisplay.innerHTML = '';
+            selectedParty.forEach(character => {
+                const memberDiv = document.createElement('div');
+                memberDiv.classList.add('party-member-stats');
+                let statsHtml = `<h4>${character.name}</h4><ul>`;
+                allStatKeys.forEach(statKey => {
+                    let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1);
+                    if (statKey === "stinkRate") statLabel = "Stinkiness Rate";
+                    let statValue = character.stats[statKey];
+                    if (statKey === "bladderSize") statValue += " mL";
+                    if (statKey === "bowelSize") statValue += " g";
+                    statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`;
                 });
-                finalPartyDisplay.style.display = 'block';
-                document.querySelector('.columns-container').style.display = 'none';
-                document.querySelector('.draft-controls').style.display = 'none';
-            } else {
-                alert(`Please select ${MAX_PARTY_SIZE} characters for your party.`);
-            }
+                statsHtml += '</ul>';
+                let gearListHtml = '<h5>Equipped Gear:</h5><ul>';
+                gearSlots.forEach(slot => {
+                    const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1); const item = character.gear[slot]; let itemName = item ? item.name : "None"; let bonuses = []; if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`); if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`); let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : ""; gearListHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`;
+                });
+                gearListHtml += '</ul>';
+                memberDiv.innerHTML = statsHtml + gearListHtml;
+                partyStatsDisplay.appendChild(memberDiv);
+            });
+
+            generateGameMap(); // Create the map data
+            renderGameMap();   // Display the initial map
+            gameOutput.textContent = "Use the N, S, E, W buttons to move around the map.";
+            console.log("Game Started with party:", selectedParty);
         });
 
         // Initial state
         draftPoolArea.innerHTML = '<p>Click "Generate Draft Pool" to see available recruits.</p>';
         selectedPartyArea.innerHTML = '<p>Draft characters from the left.</p>';
-
     </script>
 </body>
 </html>
