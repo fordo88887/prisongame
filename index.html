@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prison Manager Deluxe</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Prison Manager Deluxe</h1>
+        <nav>
+            <a href="#settings" id="navSettings" class="active">Settings</a>
+            <a href="#game" id="navGame">Game View</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- SETTINGS PAGE -->
+        <section id="settings-page">
+            <h2>Prison Settings</h2>
+            <p>Adjust the various parameters of your prison facility before you begin.</p>
+
+            <form id="prisonSettingsForm">
+                <fieldset>
+                    <legend>General Settings</legend>
+                    <div class="form-group">
+                        <label for="prisonName">Prison Name:</label>
+                        <input type="text" id="prisonName" name="prisonName" value="State Penitentiary Alpha">
+                    </div>
+                    <div class="form-group">
+                        <label for="wardenName">Warden Name:</label>
+                        <input type="text" id="wardenName" name="wardenName" value="Warden Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty">Difficulty Level:</label>
+                        <select id="difficulty" name="difficulty">
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                            <option value="nightmare">Nightmare</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Prison Population</legend>
+                    <div class="form-group">
+                        <label>Prisoner Gender:</label>
+                        <div>
+                            <input type="radio" id="genderMale" name="prisonerGender" value="male" checked>
+                            <label for="genderMale" class="radio-label">Male Prison</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="genderFemale" name="prisonerGender" value="female">
+                            <label for="genderFemale" class="radio-label">Female Prison</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="maxCapacity">Initial Max Prisoner Capacity:</label>
+                        <input type="number" id="maxCapacity" name="maxCapacity" value="50" min="10" step="10">
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Gameplay Mechanics</legend>
+                    <div class="form-group">
+                        <label for="needDecaySpeed">Need Decay Speed Factor (base daily %):</label>
+                        <input type="number" id="needDecaySpeed" name="needDecaySpeed" value="20" min="5" max="50" step="1">
+                        <small>Base daily decay for needs like hunger. Higher is faster/harder.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="foodQuality">Food Quality:</label>
+                        <select id="foodQuality" name="foodQuality">
+                            <option value="low">Low (Cheap, Low Morale)</option>
+                            <option value="medium" selected>Medium (Balanced)</option>
+                            <option value="high">High (Expensive, High Morale)</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Financial Settings</legend>
+                    <div class="form-group">
+                        <label for="startingFunds">Starting Funds ($):</label>
+                        <input type="number" id="startingFunds" name="startingFunds" value="75000" min="10000" step="1000">
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Staff Settings</legend>
+                     <div class="form-group">
+                        <label for="guardSalary">Starting Guard Salary ($/day):</label>
+                        <input type="number" id="guardSalary" name="guardSalary" value="100" min="50" step="5">
+                    </div>
+                </fieldset>
+
+                <div class="form-actions">
+                    <button type="button" id="startGameButton">Start Game with these Settings</button>
+                    <button type="reset" id="resetSettingsButton">Reset to Defaults</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- GAME VIEW PAGE (Initially Hidden) -->
+        <section id="game-view" class="hidden">
+            <h2><span id="gamePrisonName">Your Prison</span> - Day <span id="gameDay">1</span></h2>
+            
+            <div id="game-status-bar">
+                <span>Money: $<span id="gameMoney">0</span></span> |
+                <span>Prisoners: <span id="gamePrisonerCount">0</span>/<span id="gameMaxCapacityDynamic">0</span></span> | 
+                <span>Beds: <span id="gameBedCount">0</span></span> |
+                <span>Guard Count: <span id="gameGuardCount">0</span></span>
+            </div>
+
+            <!-- BUILD MODE CONTROLS -->
+            <div id="build-controls">
+                <button id="toggleBuildModeButton">Enter Build Mode</button>
+                <span id="current-build-tool">Tool: None</span>
+                <div id="build-tools-container" class="hidden">
+                    <!-- Build tool buttons will be added by JS -->
+                </div>
+            </div>
+
+            <div id="prison-map-container">
+                <h3>Prison Map</h3>
+                <pre id="prison-map-display">Map loading...</pre>
+            </div>
+
+            <h3>Prisoner Roster</h3>
+            <div id="prisoner-list-container">
+                <!-- Prisoner table -->
+            </div>
+
+            <h3>Actions</h3>
+            <div id="game-actions">
+                <button id="advanceDayButton">Advance to Next Day</button>
+                <!-- More game action buttons here -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Your Prison Game Inc.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
