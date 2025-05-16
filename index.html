@@ -1,494 +1,344 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text-Based RPG - World Map</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
+// --- Constants and Data (namePools, timePeriodConfig, gear, etc. remain largely same) ---
+// ... (Keep all your existing const declarations here) ...
+const namePools = { /* ... (same) ... */ ancient_china: ["Mei", "Lian", "Bao", "Jiao", "Nuo", "Ai", "Fen", "Hua", "Jia", "Lan"], egypt: ["Nefertari", "Merit", "Ankhesen", "Tiye", "Sitre", "Iset", "Kiya", "Mut"], rome: ["Livia", "Julia", "Octavia", "Cornelia", "Antonia", "Flavia", "Claudia", "Marcia"], medieval_europe: ["Genevieve", "Isolde", "Eleanor", "Matilda", "Adela", "Beatrice", "Blanche", "Constance"], early_1900s: ["Evelyn", "Mary", "Elizabeth", "Dorothy", "Margaret", "Helen", "Florence", "Alice"], modern: ["Alex", "Olivia", "Sophia", "Emily", "Chloe", "Maya", "Jordan", "Skyler"] };
+const timePeriodKeys = Object.keys(namePools);
+const timePeriodDisplayNames = { /* ... (same) ... */ ancient_china: "Ancient China (Noblewoman)", egypt: "Ancient Egypt", rome: "Ancient Rome", medieval_europe: "Medieval Europe", early_1900s: "Early 1900s", modern: "Modern Era" };
+const periodStatConfig = { /* ... (same) ... */ ancient_china: { bladderMin: 300, bladderMax: 600, bowelMin: 150, bowelMax: 350, stinkRateMin: 4, stinkRateMax: 8 }, egypt: { bladderMin: 280, bladderMax: 580, bowelMin: 160, bowelMax: 380, stinkRateMin: 5, stinkRateMax: 9 }, rome: { bladderMin: 320, bladderMax: 620, bowelMin: 140, bowelMax: 340, stinkRateMin: 4, stinkRateMax: 8 }, medieval_europe: { bladderMin: 250, bladderMax: 550, bowelMin: 180, bowelMax: 400, stinkRateMin: 6, stinkRateMax: 10 }, early_1900s: { bladderMin: 350, bladderMax: 650, bowelMin: 120, bowelMax: 300, stinkRateMin: 3, stinkRateMax: 7 }, modern: { bladderMin: 380, bladderMax: 700, bowelMin: 100, bowelMax: 280, stinkRateMin: 1, stinkRateMax: 5 } };
+const baseStatsToRoll = ['magicPower'];
+const allStatKeys = ['bladderSize', 'bowelSize', 'stinkRate', 'magicPower', 'strength', 'defense'];
+const gearSlots = ["underwear", "upper", "lower", "head", "hands", "accessory"];
+const periodGear = { /* ... (same extensive structure) ... */
+    ancient_china: { underwear: [{name: "Silk Dudou", defense_bonus: 1}, {name: "Linen Bindings"}], upper: [{name: "Embroidered Ruqun Blouse", defense_bonus: 1}, {name: "Silk Hanfu Robe", defense_bonus: 2}], lower: [{name: "Layered Ruqun Skirt", defense_bonus: 1}, {name: "Silk Trousers"}], head: [{name: "Ornamental Hairpins"}, {name: "Phoenix Coronet", defense_bonus: 1}, {name: "Simple Silk Headdress"}], hands: [{name: "Ceremonial Dagger", strength_bonus: 1}, {name: "Ornate Fan"}, {name: "Writing Brush"}], accessory: [{name: "Jade Pendant"}, {name: "Scented Sachet"}, {name: "Embroidered Pouch"}]},
+    egypt: { underwear: [{name: "Linen Loincloth"}, {name: "Simple Linen Wrap"}], upper: [{name: "Fine Kalasiris", defense_bonus: 1}, {name: "Beaded Net Dress", defense_bonus: 1}, {name: "Linen Shawl"}], lower: [{name: "Linen Kilt"}, {name: "Sheath Skirt (part of Kalasiris)"}], head: [{name: "Nemes Headdress", defense_bonus: 1}, {name: "Simple Linen Headband"}, {name: "Ceremonial Wig"}], hands: [{name: "Khopesh (Small)", strength_bonus: 2}, {name: "Sistrum (Ritual Rattle)"}, {name: "Papyrus Scroll"}], accessory: [{name: "Usekh Collar Necklace", defense_bonus: 1}, {name: "Gold Armlets"}, {name: "Scarab Amulet"}]},
+    rome: { underwear: [{name: "Subligaculum"}, {name: "Strophium Breast Band"}], upper: [{name: "Linen Tunica", defense_bonus: 1}, {name: "Wool Stola", defense_bonus: 1}, {name: "Palla Shawl"}], lower: [{name: "Toga (outer, implies tunic)"}, {name: "Long Tunica Skirt"}], head: [{name: "Vitta Headband"}, {name: "Ornate Hairpins"}, {name: "Simple Veil"}], hands: [{name: "Pugio Dagger", strength_bonus: 1}, {name: "Stylus and Wax Tablet"}, {name: "Scroll Case"}], accessory: [{name: "Fibula Brooch"}, {name: "Gold Earrings"}, {name: "Signet Ring"}]},
+    medieval_europe: { underwear: [{name: "Linen Chemise", defense_bonus: 1}, {name: "Linen Braies"}], upper: [{name: "Kirtle Gown", defense_bonus: 1}, {name: "Surcote Overgown", defense_bonus: 2}, {name: "Padded Aketon", defense_bonus: 3}], lower: [{name: "Hose Stockings"}, {name: "Flowing Gown Skirt", defense_bonus: 1}], head: [{name: "Wimple and Veil"}, {name: "Coif Cap"}, {name: "Steel Cap", defense_bonus: 2}, {name: "Simple Hood"}], hands: [{name: "Rondel Dagger", strength_bonus: 2}, {name: "Shortsword", strength_bonus: 3, defense_bonus: 1}, {name: "Book of Hours"}, {name: "Staff", strength_bonus: 1}], accessory: [{name: "Leather Belt with Pouch"}, {name: "Rosary Beads"}, {name: "Cloak Clasp"}]},
+    early_1900s: { underwear: [{name: "Corset & Chemise Set"}, {name: "Knickers & Camisole"}], upper: [{name: "High-Neck Blouse"}, {name: "Tailored Jacket", defense_bonus: 1}, {name: "Walking Suit Bodice"}], lower: [{name: "Long Gored Skirt"}, {name: "Ankle-length Day Skirt"}], head: [{name: "Wide-brimmed Hat"}, {name: "Bonnet"}, {name: "Cloche Hat"}], hands: [{name: "Hat Pin (Makeshift)", strength_bonus: 1}, {name: "Small Derringer Pistol", strength_bonus: 2}, {name: "Book"}, {name: "Knitting Needles"}], accessory: [{name: "Long Gloves"}, {name: "Parasol"}, {name: "Reticule Handbag"}, {name: "Locket"}]},
+    modern: { underwear: [{name: "Bra & Panties Set"}, {name: "Bodysuit"}, {name: "Sports Attire"}], upper: [{name: "T-Shirt"}, {name: "Blouse"}, {name: "Leather Jacket", defense_bonus: 2}, {name: "Hoodie", defense_bonus: 1}], lower: [{name: "Jeans", defense_bonus: 1}, {name: "Skirt"}, {name: "Tactical Pants", defense_bonus: 1}], head: [{name: "Baseball Cap"}, {name: "Beanie"}, {name: "Combat Helmet", defense_bonus: 3}, {name: "Sunglasses"}], hands: [{name: "Pocket Knife", strength_bonus: 1}, {name: "Taser", strength_bonus: 1}, {name: "Pepper Spray"}, {name: "Empty Hands"} , {name: "Heavy Wrench", strength_bonus: 2}], accessory: [{name: "Smartphone"}, {name: "Smartwatch"}, {name: "Backpack"}, {name: "Messenger Bag"}]}
+};
+
+
+let draftableCharacters = [];
+let selectedParty = [];
+const MAX_PARTY_SIZE = 3;
+
+// DOM Elements
+const draftingInterface = document.getElementById('draftingInterface');
+const generatePoolBtn = document.getElementById('generatePoolBtn');
+const finalizePartyBtn = document.getElementById('finalizePartyBtn');
+const poolSizeInput = document.getElementById('poolSize');
+const draftPoolArea = document.getElementById('draftPoolArea');
+const selectedPartyArea = document.getElementById('selectedPartyArea');
+const partyStatusDiv = document.getElementById('partyStatus');
+// ... (other DOM elements for final party, game area, inventory etc.)
+const finalPartyDisplay = document.getElementById('finalPartyDisplay');
+const finalPartyCardsContainer = document.getElementById('finalPartyCardsContainer');
+const beginGameBtn = document.getElementById('beginGameBtn');
+const gameArea = document.getElementById('gameArea');
+const gameIntroMessage = document.getElementById('gameIntroMessage');
+const partyStatsDisplay = document.getElementById('partyStatsDisplay');
+const mapDisplay = document.getElementById('mapDisplay');
+const gameOutput = document.getElementById('gameOutput');
+const poiActionsContainer = document.getElementById('poiActionsContainer');
+const toggleInventoryBtn = document.getElementById('toggleInventoryBtn');
+const inventoryPanel = document.getElementById('inventoryPanel');
+const inventoryList = document.getElementById('inventoryList');
+const closeInventoryBtn = document.getElementById('closeInventoryBtn');
+
+
+// Map Variables & POI Data (Keep these as they are relevant to the game part)
+const MAP_WIDTH = 25; const MAP_HEIGHT = 15; let gameMap = []; let playerPosition = { row: 0, col: 0 }; let pointsOfInterest = {}; let currentPOI = null;
+const POI_SYMBOLS = { TOWN: 'T', CAVE: 'C', FOREST: 'F', RUINS: 'R', SHRINE: 'S' };
+const poiDataDefinitions = { /* ... (Keep your POI definitions) ... */
+    [POI_SYMBOLS.TOWN]: { name: "a Quaint Village", description: "You see a small, bustling village...", actions: [ { text: "Talk to Villagers", handler: "talkToVillagers" }, { text: "Visit the Shop (NYI)", handler: "visitShop" }, { text: "Leave Village", handler: "leavePOI" } ], encounterChance: 0.05, enemies: ["Grumpy Farmer", "Street Urchin"] },
+    [POI_SYMBOLS.CAVE]: { name: "a Dark Cave Entrance", description: "A chill emanates...", actions: [ { text: "Explore Deeper", handler: "exploreCave", rewards: [{ itemName: "Glowing Mushroom", quantity: 1, type: "misc", chance: 0.3 }] }, { text: "Search Entrance", handler: "searchCaveEntrance", rewards: [{ itemName: "Old Coin", quantity: () => getRandomInt(1,3), type: "currency", chance: 0.6 }, { itemName: "Rusty Dagger", quantity: 1, type: "weapon", chance: 0.2 }] }, { text: "Leave Cave", handler: "leavePOI" } ], encounterChance: 0.4, enemies: ["Giant Spider", "Cave Bat Swarm", "Goblin Scout"] },
+    [POI_SYMBOLS.FOREST]: { name: "a Dense Forest", description: "The trees stand tall...", actions: [ { text: "Follow Animal Tracks", handler: "followTracks" }, { text: "Forage for Herbs", handler: "forageHerbs", rewards: [{ itemName: "Healing Herb", quantity: () => getRandomInt(1,2), type: "consumable", chance: 0.7 }, {itemName: "Common Berries", quantity: () => getRandomInt(2,5), type: "food", chance: 0.5}] }, { text: "Leave Forest", handler: "leavePOI" } ], encounterChance: 0.3, enemies: ["Wolf Pack", "Bandit Ambusher"] },
+    [POI_SYMBOLS.RUINS]: { name: "Crumbling Ancient Ruins", description: "Stone structures...", actions: [ { text: "Investigate Structures", handler: "investigateRuins", rewards: [{itemName: "Ancient Tablet Fragment", quantity:1, type:"quest_item", chance: 0.25}] }, { text: "Search for Artifacts", handler: "searchArtifacts", rewards: [{itemName: "Cracked Gemstone", quantity:1, type:"valuable", chance: 0.4}, {itemName: "Pottery Shard", quantity:() => getRandomInt(1,4), type:"misc", chance:0.6}] }, { text: "Leave Ruins", handler: "leavePOI" } ], encounterChance: 0.35, enemies: ["Restless Spirit", "Guardian Construct"] },
+    [POI_SYMBOLS.SHRINE]: { name: "a Serene Shrine", description: "A small, peaceful shrine...", actions: [ { text: "Offer a Prayer", handler: "offerPrayer", rewards: [{itemName: "Feeling of Peace", quantity:1, type:"buff_placeholder", chance:0.8}] }, { text: "Meditate Briefly", handler: "meditateShrine" }, { text: "Leave Shrine", handler: "leavePOI" } ], encounterChance: 0.0, enemies: [] }
+};
+
+
+// Inventory System (Keep this as it's relevant to the game part)
+let partyInventory = [];
+function addItemToInventory(itemDetails) { /* ... (same) ... */ const existingItem = partyInventory.find(invItem => invItem.name === itemDetails.name && invItem.type === itemDetails.type); if (existingItem) { existingItem.quantity += itemDetails.quantity; } else { partyInventory.push({ ...itemDetails }); } gameOutput.textContent += `\nAcquired: ${itemDetails.quantity}x ${itemDetails.name}.`; if(inventoryPanel.style.display === 'block') renderInventory(); }
+function removeItemFromInventory(itemName, quantityToRemove = 1) { /* ... (same) ... */ const itemIndex = partyInventory.findIndex(invItem => invItem.name === itemName); if (itemIndex > -1) { partyInventory[itemIndex].quantity -= quantityToRemove; if (partyInventory[itemIndex].quantity <= 0) { partyInventory.splice(itemIndex, 1); } gameOutput.textContent += `\nUsed/Removed: ${quantityToRemove}x ${itemName}.`; if(inventoryPanel.style.display === 'block') renderInventory(); return true; } return false; }
+function renderInventory() { /* ... (same) ... */ inventoryList.innerHTML = ''; if (partyInventory.length === 0) { inventoryList.innerHTML = '<li>Inventory is empty.</li>'; return; } partyInventory.forEach(item => { const li = document.createElement('li'); const nameSpan = document.createElement('span'); nameSpan.classList.add('item-name'); nameSpan.textContent = item.name; const quantitySpan = document.createElement('span'); quantitySpan.classList.add('item-quantity'); quantitySpan.textContent = `x${item.quantity}`; const typeSpan = document.createElement('span'); typeSpan.classList.add('item-type'); typeSpan.textContent = `(${item.type || 'misc'})`; const detailsDiv = document.createElement('div'); detailsDiv.appendChild(nameSpan); detailsDiv.appendChild(typeSpan); const actionsDiv = document.createElement('div'); li.appendChild(detailsDiv); li.appendChild(quantitySpan); li.appendChild(actionsDiv); inventoryList.appendChild(li); });}
+function toggleInventory() { /* ... (same) ... */ if (inventoryPanel.style.display === 'none' || inventoryPanel.style.display === '') { renderInventory(); inventoryPanel.style.display = 'block'; } else { inventoryPanel.style.display = 'none'; } }
+toggleInventoryBtn.addEventListener('click', toggleInventory);
+closeInventoryBtn.addEventListener('click', toggleInventory);
+
+// --- Helper Functions ---
+function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function getRandomElement(arr) {
+    if (!arr || arr.length === 0) {
+        // Distinguish call context for gear default
+        if (this && this.isGearCall) {
+            return { name: "None", defense_bonus: 0, strength_bonus: 0 };
         }
-        .container {
-            max-width: 1050px;
-            margin: 20px auto;
-            background-color: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        return "N/A"; // Default for names or other simple arrays
+    }
+    return arr[getRandomInt(0, arr.length - 1)];
+}
+
+// --- Character Generation ---
+function generateRandomCharacter(id) {
+    const randomPeriodKey = getRandomElement(timePeriodKeys);
+    const names = namePools[randomPeriodKey];
+    const randomName = getRandomElement(names); // This was the core fix for names
+    const config = periodStatConfig[randomPeriodKey];
+    const gearConfig = periodGear[randomPeriodKey];
+
+    const character = {
+        id: `char_${id}_${Date.now()}`,
+        name: randomName, // Should be a string
+        timePeriodKey: randomPeriodKey,
+        timePeriodDisplay: timePeriodDisplayNames[randomPeriodKey],
+        stats: {},
+        gear: {},
+        appearance: `A woman from ${timePeriodDisplayNames[randomPeriodKey]}.`,
+        backstory: "Her past is shrouded in mystery.",
+        skills: "Versatile."
+    };
+
+    character.stats.bladderSize = getRandomInt(config.bladderMin, config.bladderMax);
+    character.stats.bowelSize = getRandomInt(config.bowelMin, config.bowelMax);
+    character.stats.stinkRate = getRandomInt(config.stinkRateMin, config.stinkRateMax);
+    baseStatsToRoll.forEach(stat => {
+        character.stats[stat] = getRandomInt(1, 10);
+    });
+    character.stats.strength = 0;
+    character.stats.defense = 0;
+    gearSlots.forEach(slot => {
+        const selectedGearItem = getRandomElement.call({isGearCall: true}, gearConfig[slot]);
+        character.gear[slot] = selectedGearItem;
+        character.stats.defense += (selectedGearItem.defense_bonus || 0);
+        character.stats.strength += (selectedGearItem.strength_bonus || 0);
+    });
+    return character;
+}
+
+// --- UI Rendering for Character Cards (Drafting, Final Party) ---
+function renderCharacterCard(character, isDraftable = true, isFinalView = false) {
+    const card = document.createElement('div');
+    card.classList.add('character-card');
+    if (isFinalView) card.style.width = "300px"; // Specific styling for final party display
+    card.dataset.characterId = character.id;
+
+    let statsHtml = '<ul>';
+    allStatKeys.forEach(statKey => {
+        let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1);
+        if (statKey === "stinkRate") statLabel = "Stinkiness Rate";
+        let statValue = character.stats[statKey];
+        if (statKey === "bladderSize") statValue += " mL";
+        if (statKey === "bowelSize") statValue += " g";
+        statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`;
+    });
+    statsHtml += '</ul>';
+
+    let gearHtml = '<div class="gear-section"><h5>Gear:</h5><ul>';
+    gearSlots.forEach(slot => {
+        const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1);
+        const item = character.gear[slot];
+        let itemName = item ? item.name : "None";
+        let bonuses = [];
+        if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`);
+        if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`);
+        let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : "";
+        gearHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`;
+    });
+    gearHtml += '</ul></div>';
+
+    card.innerHTML = `
+        <h4>${character.name || 'Unnamed Character'}</h4> <!-- Fallback for name -->
+        <p><strong>Period:</strong> ${character.timePeriodDisplay}</p>
+        <div><strong>Stats:</strong>${statsHtml}</div>
+        ${gearHtml}
+        <p><em>${character.appearance}</em></p>
+    `;
+
+    if (!isFinalView) { // Only add draft/remove buttons if not in the final party display
+        if (isDraftable) {
+            const draftButton = document.createElement('button');
+            draftButton.textContent = 'Draft'; // Simpler text
+            draftButton.onclick = () => handleDraftCharacter(character.id);
+            card.appendChild(draftButton);
+        } else { // Assumed to be in selectedPartyArea
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Remove';
+            removeButton.style.backgroundColor = '#dc3545';
+            removeButton.onclick = () => handleRemoveCharacter(character.id);
+            card.appendChild(removeButton);
         }
-        h1, h2, h3 {
-            color: #4a3a71;
-            text-align: center;
+    }
+    return card;
+}
+
+// --- Drafting Logic ---
+function displayDraftPool() {
+    draftPoolArea.innerHTML = '';
+    if (draftableCharacters.length === 0) {
+        draftPoolArea.innerHTML = '<p>No characters generated or all drafted.</p>';
+        return;
+    }
+    draftableCharacters.forEach(char => {
+        // Only display if not already in selectedParty
+        if (!selectedParty.find(pChar => pChar.id === char.id)) {
+            const card = renderCharacterCard(char, true, false); // isDraftable = true, isFinalView = false
+            draftPoolArea.appendChild(card);
         }
-        h2 {
-            margin-top: 30px;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-        button {
-            background-color: #6a5acd; /* SlateBlue */
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-            margin: 5px;
-        }
-        button:hover {
-            background-color: #483d8b; /* DarkSlateBlue */
-        }
-        button.positive-action {
-            background-color: #28a745; /* Green */
-        }
-        button.positive-action:hover {
-            background-color: #218838;
-        }
-        button.action-button { /* For POI actions */
-            background-color: #007bff;
-            margin: 5px 3px;
-        }
-        button.action-button:hover {
-            background-color: #0056b3;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .draft-controls, .final-party-controls { /* Renamed for clarity */
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .character-card { /* ... (same as before) ... */ }
-        .columns-container { /* ... (same as before) ... */ }
-        .party-member-stats { /* ... (same as before) ... */ }
+    });
+     if (draftPoolArea.childElementCount === 0 && draftableCharacters.length > 0 && selectedParty.length < MAX_PARTY_SIZE) {
+        draftPoolArea.innerHTML = '<p>All available recruits have been drafted for now, or your party is full.</p>';
+    }
+}
 
-        /* Game Area Specific Styles */
-        #gameArea { /* ... (same as before) ... */ }
-        #partyStatsDisplay { /* ... (same as before) ... */ }
-        #mapContainer {
-            text-align: center;
-            margin-top: 20px;
-            margin-bottom: 10px; /* Reduced bottom margin */
-        }
-        #mapDisplay {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 18px;
-            line-height: 1.1;
-            white-space: pre;
-            background-color: #222;
-            color: #ccc;
-            padding: 10px;
-            border: 1px solid #444;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-        .movement-controls button {
-            min-width: 50px;
-            margin: 3px;
-        }
-        #poiActionsContainer {
-            margin-top: 10px;
-            text-align: center;
-        }
-        #gameOutput {
-            margin-top: 15px; /* Adjusted margin */
-            padding: 15px;
-            background-color: #e8e8e8;
-            min-height: 100px;
-            text-align: left;
-            white-space: pre-wrap;
-            border-radius: 3px;
-            border: 1px solid #ccc;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Text-Based RPG - World Map</h1>
-
-        <div id="draftingInterface">
-            <!-- ... (drafting UI remains the same) ... -->
-            <div class="draft-controls">
-                <label for="poolSize">Number of characters in draft pool:</label>
-                <input type="number" id="poolSize" value="8" min="3" max="20" style="width: 50px; padding: 5px; margin-right:10px;">
-                <button id="generatePoolBtn">Generate Draft Pool</button>
-                <button id="finalizePartyBtn" disabled>Finalize Party (0/3)</button>
-            </div>
-            <div class="columns-container">
-                <div class="draft-pool-column"><h2>Available Recruits</h2><div id="draftPoolArea"><p>Click "Generate Draft Pool"...</p></div></div>
-                <div class="selected-party-column"><h2>Your Party</h2><div id="partyStatus">Selected: 0/3</div><div id="selectedPartyArea"><p>Draft characters...</p></div></div>
-            </div>
-        </div>
-
-        <div id="finalPartyDisplay" style="display:none; margin-top: 30px;" class="final-party-controls">
-            <h2>Your Final Party!</h2>
-            <div id="finalPartyCardsContainer" style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;"></div>
-            <button id="beginGameBtn" class="positive-action" style="margin-top:20px;">Begin Your Adventure!</button>
-        </div>
-
-        <div id="gameArea" style="display:none;">
-            <h2>The Adventure Begins!</h2>
-            <p id="gameIntroMessage" style="text-align:center; margin-bottom: 20px;"></p>
-            <div id="partyStatsDisplay"></div>
-
-            <div id="mapContainer">
-                <pre id="mapDisplay">Map will appear here...</pre>
-                <div class="movement-controls">
-                    <button id="moveNorthBtn">N</button><br>
-                    <button id="moveWestBtn">W</button>
-                    <span style="display: inline-block; width: 50px;"></span> <!-- Spacer -->
-                    <button id="moveEastBtn">E</button><br>
-                    <button id="moveSouthBtn">S</button>
-                </div>
-            </div>
-
-            <div id="gameOutput">
-                Game messages will appear here...
-            </div>
-            <div id="poiActionsContainer">
-                <!-- Buttons for POI actions will appear here -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // --- Constants and Data (namePools, timePeriodConfig, gear, etc. remain largely same) ---
-        const namePools = { /* ... (same) ... */ ancient_china: ["Mei", "Lian", "Bao", "Jiao", "Nuo", "Ai", "Fen", "Hua", "Jia", "Lan"], egypt: ["Nefertari", "Merit", "Ankhesen", "Tiye", "Sitre", "Iset", "Kiya", "Mut"], rome: ["Livia", "Julia", "Octavia", "Cornelia", "Antonia", "Flavia", "Claudia", "Marcia"], medieval_europe: ["Genevieve", "Isolde", "Eleanor", "Matilda", "Adela", "Beatrice", "Blanche", "Constance"], early_1900s: ["Evelyn", "Mary", "Elizabeth", "Dorothy", "Margaret", "Helen", "Florence", "Alice"], modern: ["Alex", "Olivia", "Sophia", "Emily", "Chloe", "Maya", "Jordan", "Skyler"] };
-        const timePeriodKeys = Object.keys(namePools);
-        const timePeriodDisplayNames = { /* ... (same) ... */ ancient_china: "Ancient China (Noblewoman)", egypt: "Ancient Egypt", rome: "Ancient Rome", medieval_europe: "Medieval Europe", early_1900s: "Early 1900s", modern: "Modern Era" };
-        const periodStatConfig = { /* ... (same) ... */ ancient_china: { bladderMin: 300, bladderMax: 600, bowelMin: 150, bowelMax: 350, stinkRateMin: 4, stinkRateMax: 8 }, egypt: { bladderMin: 280, bladderMax: 580, bowelMin: 160, bowelMax: 380, stinkRateMin: 5, stinkRateMax: 9 }, rome: { bladderMin: 320, bladderMax: 620, bowelMin: 140, bowelMax: 340, stinkRateMin: 4, stinkRateMax: 8 }, medieval_europe: { bladderMin: 250, bladderMax: 550, bowelMin: 180, bowelMax: 400, stinkRateMin: 6, stinkRateMax: 10 }, early_1900s: { bladderMin: 350, bladderMax: 650, bowelMin: 120, bowelMax: 300, stinkRateMin: 3, stinkRateMax: 7 }, modern: { bladderMin: 380, bladderMax: 700, bowelMin: 100, bowelMax: 280, stinkRateMin: 1, stinkRateMax: 5 } };
-        const baseStatsToRoll = ['magicPower'];
-        const allStatKeys = ['bladderSize', 'bowelSize', 'stinkRate', 'magicPower', 'strength', 'defense'];
-        const gearSlots = ["underwear", "upper", "lower", "head", "hands", "accessory"];
-        const periodGear = { /* ... (same extensive structure) ... */
-            ancient_china: { underwear: [{name: "Silk Dudou", defense_bonus: 1}, {name: "Linen Bindings"}], upper: [{name: "Embroidered Ruqun Blouse", defense_bonus: 1}, {name: "Silk Hanfu Robe", defense_bonus: 2}], lower: [{name: "Layered Ruqun Skirt", defense_bonus: 1}, {name: "Silk Trousers"}], head: [{name: "Ornamental Hairpins"}, {name: "Phoenix Coronet", defense_bonus: 1}, {name: "Simple Silk Headdress"}], hands: [{name: "Ceremonial Dagger", strength_bonus: 1}, {name: "Ornate Fan"}, {name: "Writing Brush"}], accessory: [{name: "Jade Pendant"}, {name: "Scented Sachet"}, {name: "Embroidered Pouch"}]},
-            egypt: { underwear: [{name: "Linen Loincloth"}, {name: "Simple Linen Wrap"}], upper: [{name: "Fine Kalasiris", defense_bonus: 1}, {name: "Beaded Net Dress", defense_bonus: 1}, {name: "Linen Shawl"}], lower: [{name: "Linen Kilt"}, {name: "Sheath Skirt (part of Kalasiris)"}], head: [{name: "Nemes Headdress", defense_bonus: 1}, {name: "Simple Linen Headband"}, {name: "Ceremonial Wig"}], hands: [{name: "Khopesh (Small)", strength_bonus: 2}, {name: "Sistrum (Ritual Rattle)"}, {name: "Papyrus Scroll"}], accessory: [{name: "Usekh Collar Necklace", defense_bonus: 1}, {name: "Gold Armlets"}, {name: "Scarab Amulet"}]},
-            rome: { underwear: [{name: "Subligaculum"}, {name: "Strophium Breast Band"}], upper: [{name: "Linen Tunica", defense_bonus: 1}, {name: "Wool Stola", defense_bonus: 1}, {name: "Palla Shawl"}], lower: [{name: "Toga (outer, implies tunic)"}, {name: "Long Tunica Skirt"}], head: [{name: "Vitta Headband"}, {name: "Ornate Hairpins"}, {name: "Simple Veil"}], hands: [{name: "Pugio Dagger", strength_bonus: 1}, {name: "Stylus and Wax Tablet"}, {name: "Scroll Case"}], accessory: [{name: "Fibula Brooch"}, {name: "Gold Earrings"}, {name: "Signet Ring"}]},
-            medieval_europe: { underwear: [{name: "Linen Chemise", defense_bonus: 1}, {name: "Linen Braies"}], upper: [{name: "Kirtle Gown", defense_bonus: 1}, {name: "Surcote Overgown", defense_bonus: 2}, {name: "Padded Aketon", defense_bonus: 3}], lower: [{name: "Hose Stockings"}, {name: "Flowing Gown Skirt", defense_bonus: 1}], head: [{name: "Wimple and Veil"}, {name: "Coif Cap"}, {name: "Steel Cap", defense_bonus: 2}, {name: "Simple Hood"}], hands: [{name: "Rondel Dagger", strength_bonus: 2}, {name: "Shortsword", strength_bonus: 3, defense_bonus: 1}, {name: "Book of Hours"}, {name: "Staff", strength_bonus: 1}], accessory: [{name: "Leather Belt with Pouch"}, {name: "Rosary Beads"}, {name: "Cloak Clasp"}]},
-            early_1900s: { underwear: [{name: "Corset & Chemise Set"}, {name: "Knickers & Camisole"}], upper: [{name: "High-Neck Blouse"}, {name: "Tailored Jacket", defense_bonus: 1}, {name: "Walking Suit Bodice"}], lower: [{name: "Long Gored Skirt"}, {name: "Ankle-length Day Skirt"}], head: [{name: "Wide-brimmed Hat"}, {name: "Bonnet"}, {name: "Cloche Hat"}], hands: [{name: "Hat Pin (Makeshift)", strength_bonus: 1}, {name: "Small Derringer Pistol", strength_bonus: 2}, {name: "Book"}, {name: "Knitting Needles"}], accessory: [{name: "Long Gloves"}, {name: "Parasol"}, {name: "Reticule Handbag"}, {name: "Locket"}]},
-            modern: { underwear: [{name: "Bra & Panties Set"}, {name: "Bodysuit"}, {name: "Sports Attire"}], upper: [{name: "T-Shirt"}, {name: "Blouse"}, {name: "Leather Jacket", defense_bonus: 2}, {name: "Hoodie", defense_bonus: 1}], lower: [{name: "Jeans", defense_bonus: 1}, {name: "Skirt"}, {name: "Tactical Pants", defense_bonus: 1}], head: [{name: "Baseball Cap"}, {name: "Beanie"}, {name: "Combat Helmet", defense_bonus: 3}, {name: "Sunglasses"}], hands: [{name: "Pocket Knife", strength_bonus: 1}, {name: "Taser", strength_bonus: 1}, {name: "Pepper Spray"}, {name: "Empty Hands"} , {name: "Heavy Wrench", strength_bonus: 2}], accessory: [{name: "Smartphone"}, {name: "Smartwatch"}, {name: "Backpack"}, {name: "Messenger Bag"}]}
-        };
-
-
-        let draftableCharacters = [];
-        let selectedParty = [];
-        const MAX_PARTY_SIZE = 3;
-
-        // DOM Elements (mostly same, added poiActionsContainer)
-        const draftingInterface = document.getElementById('draftingInterface');
-        const generatePoolBtn = document.getElementById('generatePoolBtn');
-        const finalizePartyBtn = document.getElementById('finalizePartyBtn');
-        const poolSizeInput = document.getElementById('poolSize');
-        const draftPoolArea = document.getElementById('draftPoolArea');
-        const selectedPartyArea = document.getElementById('selectedPartyArea');
-        const partyStatusDiv = document.getElementById('partyStatus');
-        const finalPartyDisplay = document.getElementById('finalPartyDisplay');
-        const finalPartyCardsContainer = document.getElementById('finalPartyCardsContainer');
-        const beginGameBtn = document.getElementById('beginGameBtn');
-        const gameArea = document.getElementById('gameArea');
-        const gameIntroMessage = document.getElementById('gameIntroMessage');
-        const partyStatsDisplay = document.getElementById('partyStatsDisplay');
-        const mapDisplay = document.getElementById('mapDisplay');
-        const gameOutput = document.getElementById('gameOutput');
-        const poiActionsContainer = document.getElementById('poiActionsContainer');
-
-        // Map Variables
-        const MAP_WIDTH = 25; // Slightly larger for more POIs
-        const MAP_HEIGHT = 15;
-        let gameMap = []; // Stores the visual representation ('.', 'T', 'C', etc.)
-        let playerPosition = { row: 0, col: 0 };
-        let pointsOfInterest = {}; // Stores data about POIs: `{"row-col": {type: 'T', ...}}`
-        let currentPOI = null; // Holds data of the POI the player is currently in
-
-        const POI_SYMBOLS = {
-            TOWN: 'T',
-            CAVE: 'C',
-            FOREST: 'F',
-            RUINS: 'R',
-            SHRINE: 'S'
-        };
-
-        // POI Data (example structure)
-        const poiDataDefinitions = {
-            [POI_SYMBOLS.TOWN]: {
-                name: "a Quaint Village",
-                description: "You see a small, bustling village. Smoke rises from chimneys, and you hear the distant sound of a blacksmith's hammer.",
-                actions: [
-                    { text: "Talk to Villagers", handler: "talkToVillagers" },
-                    { text: "Visit the Shop (NYI)", handler: "visitShop" }, // NYI = Not Yet Implemented
-                    { text: "Leave Village", handler: "leavePOI" }
-                ],
-                encounterChance: 0.05, // Low chance of a minor event, not necessarily combat
-                enemies: ["Grumpy Farmer (Annoyed)", "Street Urchin (Pickpocket attempt)"]
-            },
-            [POI_SYMBOLS.CAVE]: {
-                name: "a Dark Cave Entrance",
-                description: "A chill emanates from the dark maw of this cave. Strange echoes can be heard from within.",
-                actions: [
-                    { text: "Explore Deeper", handler: "exploreCave" },
-                    { text: "Search Entrance", handler: "searchCaveEntrance" },
-                    { text: "Leave Cave", handler: "leavePOI" }
-                ],
-                encounterChance: 0.4,
-                enemies: ["Giant Spider", "Cave Bat Swarm", "Goblin Scout"]
-            },
-            [POI_SYMBOLS.FOREST]: {
-                name: "a Dense Forest",
-                description: "The trees stand tall and close together, sunlight dappling the forest floor. The air is thick with the scent of pine and damp earth.",
-                actions: [
-                    { text: "Follow Animal Tracks", handler: "followTracks" },
-                    { text: "Forage for Herbs (NYI)", handler: "forageHerbs" },
-                    { text: "Leave Forest", handler: "leavePOI" }
-                ],
-                encounterChance: 0.3,
-                enemies: ["Wolf Pack", "Bandit Ambusher", "Giant Boar"]
-            },
-             [POI_SYMBOLS.RUINS]: {
-                name: "Crumbling Ancient Ruins",
-                description: "Stone structures, weathered by time, jut out from the overgrown landscape. A sense of forgotten history hangs in the air.",
-                actions: [
-                    { text: "Investigate Structures", handler: "investigateRuins" },
-                    { text: "Look for Artifacts (NYI)", handler: "searchArtifacts" },
-                    { text: "Leave Ruins", handler: "leavePOI" }
-                ],
-                encounterChance: 0.35,
-                enemies: ["Restless Spirit", "Guardian Construct (Damaged)", "Treasure Hunter (Rival)"]
-            },
-            [POI_SYMBOLS.SHRINE]: {
-                name: "a Serene Shrine",
-                description: "A small, peaceful shrine stands here, dedicated to an unknown deity. Offerings of flowers and incense lie at its base.",
-                actions: [
-                    { text: "Offer a Prayer", handler: "offerPrayer" },
-                    { text: "Meditate Briefly", handler: "meditateShrine" },
-                    { text: "Leave Shrine", handler: "leavePOI" }
-                ],
-                encounterChance: 0.0, // Peaceful spot
-                enemies: []
-            }
-            // Add more POI types as needed
-        };
-
-
-        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-        function getRandomElement(arr) {
-            if (!arr || arr.length === 0) {
-                if (this && this.isGearCall) { return { name: "None", defense_bonus: 0, strength_bonus: 0 }; }
-                return "N/A";
-            }
-            return arr[getRandomInt(0, arr.length - 1)];
-        }
-        function generateRandomCharacter(id) { /* ... (same as before) ... */
-            const randomPeriodKey = getRandomElement(timePeriodKeys); const names = namePools[randomPeriodKey]; const randomName = getRandomElement(names); const config = periodStatConfig[randomPeriodKey]; const gearConfig = periodGear[randomPeriodKey]; const character = { id: `char_${id}_${Date.now()}`, name: randomName, timePeriodKey: randomPeriodKey, timePeriodDisplay: timePeriodDisplayNames[randomPeriodKey], stats: {}, gear: {}, appearance: `A woman from ${timePeriodDisplayNames[randomPeriodKey]}.`, backstory: "Her past is shrouded in mystery.", skills: "Versatile." }; character.stats.bladderSize = getRandomInt(config.bladderMin, config.bladderMax); character.stats.bowelSize = getRandomInt(config.bowelMin, config.bowelMax); character.stats.stinkRate = getRandomInt(config.stinkRateMin, config.stinkRateMax); baseStatsToRoll.forEach(stat => { character.stats[stat] = getRandomInt(1, 10); }); character.stats.strength = 0; character.stats.defense = 0; gearSlots.forEach(slot => { const selectedGearItem = getRandomElement.call({isGearCall: true}, gearConfig[slot]); character.gear[slot] = selectedGearItem; character.stats.defense += (selectedGearItem.defense_bonus || 0); character.stats.strength += (selectedGearItem.strength_bonus || 0); }); return character;
-        }
-        function renderCharacterCard(character, isDraftable = true, isFinalView = false) { /* ... (same as before) ... */
-            const card = document.createElement('div'); card.classList.add('character-card'); if (isFinalView) card.style.width = "300px"; card.dataset.characterId = character.id; let statsHtml = '<ul>'; allStatKeys.forEach(statKey => { let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1); if (statKey === "stinkRate") statLabel = "Stinkiness Rate"; let statValue = character.stats[statKey]; if (statKey === "bladderSize") statValue += " mL"; if (statKey === "bowelSize") statValue += " g"; statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`; }); statsHtml += '</ul>'; let gearHtml = '<div class="gear-section"><h5>Gear:</h5><ul>'; gearSlots.forEach(slot => { const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1); const item = character.gear[slot]; let itemName = item ? item.name : "None"; let bonuses = []; if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`); if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`); let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : ""; gearHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`; }); gearHtml += '</ul></div>'; card.innerHTML = `<h4>${character.name}</h4><p><strong>Period:</strong> ${character.timePeriodDisplay}</p><div><strong>Stats:</strong>${statsHtml}</div>${gearHtml}<p><em>${character.appearance}</em></p>`; if (!isFinalView) { if (isDraftable) { const btn = document.createElement('button'); btn.textContent = 'Draft'; btn.onclick = () => handleDraftCharacter(character.id); card.appendChild(btn); } else { const btn = document.createElement('button'); btn.textContent = 'Remove'; btn.style.backgroundColor = '#dc3545'; btn.onclick = () => handleRemoveCharacter(character.id); card.appendChild(btn); } } return card;
-        }
-        function displayDraftPool() { /* ... (same as before) ... */ }
-        function displaySelectedParty() { /* ... (same as before) ... */ }
-        function handleDraftCharacter(characterId) { /* ... (same as before) ... */ }
-        function handleRemoveCharacter(characterId) { /* ... (same as before) ... */ }
-        generatePoolBtn.addEventListener('click', () => { /* ... (same as before) ... */ });
-        finalizePartyBtn.addEventListener('click', () => { /* ... (same as before) ... */ });
-
-        // --- MAP FUNCTIONS ---
-        function generateGameMap() {
-            gameMap = [];
-            pointsOfInterest = {}; // Reset POI data
-            const poiSymbolValues = Object.values(POI_SYMBOLS);
-            const numPOIsToPlace = Math.floor((MAP_WIDTH * MAP_HEIGHT) * 0.05); // Place POIs on ~5% of tiles
-
-            for (let r = 0; r < MAP_HEIGHT; r++) {
-                const row = Array(MAP_WIDTH).fill('.'); // Fill with empty space first
-                gameMap.push(row);
-            }
-
-            // Place POIs
-            for (let i = 0; i < numPOIsToPlace; i++) {
-                let placed = false;
-                while (!placed) {
-                    const r = getRandomInt(0, MAP_HEIGHT - 1);
-                    const c = getRandomInt(0, MAP_WIDTH - 1);
-                    if (gameMap[r][c] === '.') { // Only place on empty tiles
-                        const poiTypeSymbol = getRandomElement(poiSymbolValues);
-                        gameMap[r][c] = poiTypeSymbol;
-                        pointsOfInterest[`${r}-${c}`] = {
-                            type: poiTypeSymbol,
-                            ...JSON.parse(JSON.stringify(poiDataDefinitions[poiTypeSymbol])) // Deep copy POI definition
-                        };
-                        placed = true;
-                    }
-                }
-            }
-
-            // Place player randomly on an empty spot
-            let playerPlaced = false;
-            while (!playerPlaced) {
-                const r = getRandomInt(0, MAP_HEIGHT - 1);
-                const c = getRandomInt(0, MAP_WIDTH - 1);
-                if (gameMap[r][c] === '.') {
-                    playerPosition = { row: r, col: c };
-                    playerPlaced = true;
-                }
-            }
-        }
-
-        function renderGameMap() {
-            let mapString = "";
-            for (let r = 0; r < MAP_HEIGHT; r++) {
-                for (let c = 0; c < MAP_WIDTH; c++) {
-                    if (r === playerPosition.row && c === playerPosition.col) {
-                        mapString += '@';
-                    } else {
-                        mapString += gameMap[r][c];
-                    }
-                }
-                mapString += '\n';
-            }
-            mapDisplay.textContent = mapString.trim();
-        }
-
-        function movePlayer(dRow, dCol) {
-            if (currentPOI) { // Player is in a POI, must use POI actions or "Leave"
-                gameOutput.textContent = `You are currently at ${currentPOI.name}. You must choose an action or leave first.`;
-                return;
-            }
-
-            const newRow = playerPosition.row + dRow;
-            const newCol = playerPosition.col + dCol;
-
-            if (newRow < 0 || newRow >= MAP_HEIGHT || newCol < 0 || newCol >= MAP_WIDTH) {
-                gameOutput.textContent = "You can't move off the edge of the map!";
-                return;
-            }
-
-            playerPosition.row = newRow;
-            playerPosition.col = newCol;
-            gameOutput.textContent = "You moved.";
-            renderGameMap();
-            checkAndEnterPOI();
-        }
-
-        function checkAndEnterPOI() {
-            const poiKey = `${playerPosition.row}-${playerPosition.col}`;
-            if (pointsOfInterest[poiKey]) {
-                currentPOI = pointsOfInterest[poiKey];
-                enterPOI(currentPOI);
-            } else {
-                currentPOI = null; // Clear current POI if moved to empty space
-                poiActionsContainer.innerHTML = ''; // Clear POI actions
-                if (gameOutput.textContent === "You moved.") { // Only update if not already showing a message
-                     gameOutput.textContent = "You are in an open area.";
-                }
-            }
-        }
-
-        function enterPOI(poi) {
-            let message = `You have entered ${poi.name}.\n${poi.description}`;
-            if (poi.encounterChance > 0 && Math.random() < poi.encounterChance) {
-                const enemy = getRandomElement(poi.enemies);
-                message += `\n\nDanger! You encounter: ${enemy}! (Combat NYI)`;
-                // Here you would trigger combat state
-            }
-            gameOutput.textContent = message;
-            renderPOIActions(poi.actions);
-            toggleMovementButtons(false); // Disable map movement while in POI
-        }
-
-        function renderPOIActions(actions) {
-            poiActionsContainer.innerHTML = '';
-            actions.forEach(action => {
-                const button = document.createElement('button');
-                button.textContent = action.text;
-                button.classList.add('action-button');
-                button.onclick = () => {
-                    // Simple handler lookup for now
-                    if (typeof window[action.handler] === 'function') {
-                        window[action.handler](currentPOI); // Pass currentPOI to handler
-                    } else {
-                        gameOutput.textContent = `Action: ${action.text} (Handler '${action.handler}' not implemented yet).`;
-                    }
-                };
-                poiActionsContainer.appendChild(button);
-            });
-        }
-
-        function toggleMovementButtons(enabled) {
-            document.getElementById('moveNorthBtn').disabled = !enabled;
-            document.getElementById('moveSouthBtn').disabled = !enabled;
-            document.getElementById('moveEastBtn').disabled = !enabled;
-            document.getElementById('moveWestBtn').disabled = !enabled;
-        }
-
-        // --- POI Action Handlers (Examples) ---
-        function leavePOI() {
-            if (currentPOI) {
-                gameOutput.textContent = `You leave ${currentPOI.name}.`;
-                currentPOI = null;
-                poiActionsContainer.innerHTML = '';
-                toggleMovementButtons(true); // Re-enable map movement
-                // Potentially move player slightly away or back to previous tile if desired
-            }
-        }
-
-        function talkToVillagers(poi) {
-            gameOutput.textContent = `You approach some villagers in ${poi.name}.\nVillager: "Welcome, traveler! What brings you to our humble village?"\n(Further dialogue options NYI)`;
-        }
-        function visitShop(poi){ gameOutput.textContent = `The shop in ${poi.name} is currently closed for renovations. (NYI)`; }
-
-        function exploreCave(poi) {
-            gameOutput.textContent = `You venture deeper into ${poi.name}.\nIt's dark and damp. You hear a skittering sound nearby...\n(Further cave exploration NYI)`;
-            // Could lead to more specific encounters or loot
-        }
-        function searchCaveEntrance(poi) { gameOutput.textContent = `You search the entrance of ${poi.name} but find nothing of note.`; }
-
-        function followTracks(poi) { gameOutput.textContent = `You follow some animal tracks in ${poi.name} but they soon disappear into the undergrowth.`; }
-        function forageHerbs(poi) { gameOutput.textContent = `You attempt to forage for herbs in ${poi.name}. (Skill check and item gain NYI)`; }
-
-        function investigateRuins(poi) { gameOutput.textContent = `You carefully investigate the crumbling structures in ${poi.name}. You find ancient carvings depicting strange rituals.`; }
-        function searchArtifacts(poi) { gameOutput.textContent = `You search for artifacts in ${poi.name}. (Skill check and item gain NYI)`; }
-
-        function offerPrayer(poi) { gameOutput.textContent = `You offer a quiet prayer at ${poi.name}. A sense of peace washes over you.`; }
-        function meditateShrine(poi) { gameOutput.textContent = `You meditate briefly at ${poi.name}, feeling refreshed.`; }
-
-
-        // Movement button event listeners
-        document.getElementById('moveNorthBtn').addEventListener('click', () => movePlayer(-1, 0));
-        document.getElementById('moveSouthBtn').addEventListener('click', () => movePlayer(1, 0));
-        document.getElementById('moveEastBtn').addEventListener('click', () => movePlayer(0, 1));
-        document.getElementById('moveWestBtn').addEventListener('click', () => movePlayer(0, -1));
-
-
-        // MODIFIED beginGameBtn listener
-        beginGameBtn.addEventListener('click', () => {
-            finalPartyDisplay.style.display = 'none';
-            gameArea.style.display = 'block';
-            const partyNames = selectedParty.map(char => char.name).join(', ');
-            gameIntroMessage.textContent = `Your adventure begins with: ${partyNames}!`;
-            partyStatsDisplay.innerHTML = ''; // Display party stats (code omitted for brevity, same as before)
-            selectedParty.forEach(character => { /* ... (same party stats display logic) ... */
-                const memberDiv = document.createElement('div'); memberDiv.classList.add('party-member-stats'); let statsHtml = `<h4>${character.name}</h4><ul>`; allStatKeys.forEach(statKey => { let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1); if (statKey === "stinkRate") statLabel = "Stinkiness Rate"; let statValue = character.stats[statKey]; if (statKey === "bladderSize") statValue += " mL"; if (statKey === "bowelSize") statValue += " g"; statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`; }); statsHtml += '</ul>'; let gearListHtml = '<h5>Equipped Gear:</h5><ul>'; gearSlots.forEach(slot => { const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1); const item = character.gear[slot]; let itemName = item ? item.name : "None"; let bonuses = []; if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`); if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`); let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : ""; gearListHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`; }); gearListHtml += '</ul>'; memberDiv.innerHTML = statsHtml + gearListHtml; partyStatsDisplay.appendChild(memberDiv);
-            });
-
-            generateGameMap();
-            renderGameMap();
-            toggleMovementButtons(true); // Ensure movement is enabled at start
-            checkAndEnterPOI(); // Check if starting position is a POI
-            if (!currentPOI) {
-                gameOutput.textContent = "You find yourself on the world map. Use N,S,E,W to explore.";
-            }
-            console.log("Game Started with party:", selectedParty, "POIs:", pointsOfInterest);
-        });
-
-        // Initial state
-        draftPoolArea.innerHTML = '<p>Click "Generate Draft Pool" to see available recruits.</p>';
+function displaySelectedParty() {
+    selectedPartyArea.innerHTML = '';
+    if (selectedParty.length === 0) {
         selectedPartyArea.innerHTML = '<p>Draft characters from the left.</p>';
-    </script>
-</body>
-</html>
+    } else {
+        selectedParty.forEach(char => {
+            const card = renderCharacterCard(char, false, false); // isDraftable = false, isFinalView = false
+            selectedPartyArea.appendChild(card);
+        });
+    }
+    partyStatusDiv.textContent = `Selected: ${selectedParty.length}/${MAX_PARTY_SIZE}`;
+    finalizePartyBtn.textContent = `Finalize Party (${selectedParty.length}/${MAX_PARTY_SIZE})`;
+    finalizePartyBtn.disabled = selectedParty.length !== MAX_PARTY_SIZE;
+
+    // Update draft pool buttons (disable if drafted or party full)
+    const draftButtons = draftPoolArea.querySelectorAll('.character-card button');
+    draftButtons.forEach(btn => {
+        const card = btn.closest('.character-card');
+        if (card) {
+            const charId = card.dataset.characterId;
+            // Check if character is in selectedParty OR if party is full
+            btn.disabled = selectedParty.find(pChar => pChar.id === charId) || selectedParty.length >= MAX_PARTY_SIZE;
+        }
+    });
+}
+
+function handleDraftCharacter(characterId) {
+    if (selectedParty.length >= MAX_PARTY_SIZE) {
+        alert(`You can only have ${MAX_PARTY_SIZE} characters in your party.`);
+        return;
+    }
+    const characterToAdd = draftableCharacters.find(char => char.id === characterId);
+    if (characterToAdd && !selectedParty.find(pChar => pChar.id === characterId)) {
+        selectedParty.push(characterToAdd);
+        displaySelectedParty(); // Update selected party display
+        displayDraftPool();   // Re-render draft pool to update button states or remove card
+    }
+}
+
+function handleRemoveCharacter(characterId) {
+    selectedParty = selectedParty.filter(char => char.id !== characterId);
+    displaySelectedParty(); // Update selected party display
+    displayDraftPool();   // Re-render draft pool to make character available again
+}
+
+generatePoolBtn.addEventListener('click', () => {
+    const numToGenerate = parseInt(poolSizeInput.value) || 8;
+    draftableCharacters = []; // Clear existing draftable characters
+    selectedParty = [];       // Clear selected party as well for a fresh draft
+    for (let i = 0; i < numToGenerate; i++) {
+        draftableCharacters.push(generateRandomCharacter(i));
+    }
+    // Ensure game/final party displays are hidden and drafting is visible
+    finalPartyDisplay.style.display = 'none';
+    gameArea.style.display = 'none';
+    draftingInterface.style.display = 'block';
+
+    displayDraftPool();       // Display the new pool
+    displaySelectedParty();   // Display the (now empty) selected party
+});
+
+finalizePartyBtn.addEventListener('click', () => {
+    if (selectedParty.length === MAX_PARTY_SIZE) {
+        console.log("Final Party (to be passed to game):", selectedParty);
+        finalPartyCardsContainer.innerHTML = ''; // Clear previous
+        selectedParty.forEach(char => {
+            const card = renderCharacterCard(char, false, true); // isDraftable = false, isFinalView = true
+            finalPartyCardsContainer.appendChild(card);
+        });
+        draftingInterface.style.display = 'none';
+        finalPartyDisplay.style.display = 'block';
+        gameArea.style.display = 'none';
+    } else {
+        alert(`Please select ${MAX_PARTY_SIZE} characters for your party.`);
+    }
+});
+
+
+// --- MAP FUNCTIONS (generateGameMap, renderGameMap, movePlayer, checkAndEnterPOI - Keep these for the game part) ---
+function generateGameMap() { /* ... (same) ... */ gameMap = []; pointsOfInterest = {}; const poiSymbolValues = Object.values(POI_SYMBOLS); const numPOIsToPlace = Math.floor((MAP_WIDTH * MAP_HEIGHT) * 0.07); for (let r = 0; r < MAP_HEIGHT; r++) { const row = Array(MAP_WIDTH).fill('.'); gameMap.push(row); } for (let i = 0; i < numPOIsToPlace; i++) { let placed = false; while (!placed) { const r = getRandomInt(0, MAP_HEIGHT - 1); const c = getRandomInt(0, MAP_WIDTH - 1); if (gameMap[r][c] === '.') { const poiTypeSymbol = getRandomElement(poiSymbolValues); gameMap[r][c] = poiTypeSymbol; pointsOfInterest[`${r}-${c}`] = { type: poiTypeSymbol, ...JSON.parse(JSON.stringify(poiDataDefinitions[poiTypeSymbol])) }; placed = true; } } } let playerPlaced = false; while (!playerPlaced) { const r = getRandomInt(0, MAP_HEIGHT - 1); const c = getRandomInt(0, MAP_WIDTH - 1); if (gameMap[r][c] === '.') { playerPosition = { row: r, col: c }; playerPlaced = true; } } }
+function renderGameMap() { /* ... (same) ... */ let mapString = ""; for (let r = 0; r < MAP_HEIGHT; r++) { for (let c = 0; c < MAP_WIDTH; c++) { if (r === playerPosition.row && c === playerPosition.col) { mapString += '@'; } else { mapString += gameMap[r][c]; } } mapString += '\n'; } mapDisplay.textContent = mapString.trim(); }
+function movePlayer(dRow, dCol) { /* ... (same) ... */ if (currentPOI) { gameOutput.textContent = `You are at ${currentPOI.name}. Choose an action or leave.`; return; } const newRow = playerPosition.row + dRow; const newCol = playerPosition.col + dCol; if (newRow < 0 || newRow >= MAP_HEIGHT || newCol < 0 || newCol >= MAP_WIDTH) { gameOutput.textContent = "You can't move off the map!"; return; } playerPosition.row = newRow; playerPosition.col = newCol; gameOutput.textContent = "You moved."; renderGameMap(); checkAndEnterPOI(); }
+function checkAndEnterPOI() { /* ... (same) ... */ const poiKey = `${playerPosition.row}-${playerPosition.col}`; if (pointsOfInterest[poiKey]) { currentPOI = pointsOfInterest[poiKey]; enterPOI(currentPOI); } else { currentPOI = null; poiActionsContainer.innerHTML = ''; if (gameOutput.textContent.startsWith("You moved.")) {gameOutput.textContent = "You are in an open area."; toggleMovementButtons(true); } } }
+function toggleMovementButtons(enabled) { /* ... (same) ... */ document.getElementById('moveNorthBtn').disabled = !enabled; document.getElementById('moveSouthBtn').disabled = !enabled; document.getElementById('moveEastBtn').disabled = !enabled; document.getElementById('moveWestBtn').disabled = !enabled; }
+
+// --- POI INTERACTION (enterPOI, renderPOIActions - Keep these for the game part) ---
+function enterPOI(poi) { /* ... (same) ... */ let message = `You have entered ${poi.name}.\n${poi.description}`; if (poi.encounterChance > 0 && Math.random() < poi.encounterChance) { const enemy = getRandomElement(poi.enemies); message += `\n\nDanger! You encounter: ${enemy}! (Combat NYI)`; } gameOutput.textContent = message; renderPOIActions(poi.actions); toggleMovementButtons(false); }
+function renderPOIActions(actions) { /* ... (same, with reward processing) ... */ poiActionsContainer.innerHTML = ''; actions.forEach(action => { const button = document.createElement('button'); button.textContent = action.text; button.classList.add('action-button'); button.onclick = () => { if (!gameOutput.textContent.includes("Acquired:")) { gameOutput.textContent = `Action: ${action.text}`; } else { gameOutput.textContent += `\n> ${action.text}`; } if (action.rewards && action.rewards.length > 0) { let foundSomething = false; action.rewards.forEach(reward => { if (Math.random() < reward.chance) { addItemToInventory({ name: reward.itemName, quantity: typeof reward.quantity === 'function' ? reward.quantity() : reward.quantity, type: reward.type || "misc" }); foundSomething = true; } }); } if (typeof window[action.handler] === 'function') { window[action.handler](currentPOI, action); } else { if (!gameOutput.textContent.includes("Acquired:") && (!action.rewards || action.rewards.length === 0)) { gameOutput.textContent = `Action: ${action.text} (Handler '${action.handler}' not implemented yet).`; } } }; poiActionsContainer.appendChild(button); }); }
+
+// --- POI Action Handlers (Keep these for the game part) ---
+function leavePOI() { /* ... (same) ... */ if (currentPOI) { gameOutput.textContent = `You leave ${currentPOI.name}.`; currentPOI = null; poiActionsContainer.innerHTML = ''; toggleMovementButtons(true); } }
+function talkToVillagers(poi, action) { /* ... (same) ... */ gameOutput.textContent += `\nVillager: "Welcome, traveler!" (Dialogue NYI)`; }
+function visitShop(poi, action){ /* ... (same) ... */ gameOutput.textContent += `\nThe shop in ${poi.name} is closed. (NYI)`; }
+function exploreCave(poi, action) { /* ... (same) ... */ gameOutput.textContent += `\nYou venture deeper... (Cave content NYI)`; }
+function searchCaveEntrance(poi, action) { /* ... (same) ... */ if (!gameOutput.textContent.includes("Acquired:")) gameOutput.textContent += `\nYou search the cave entrance...`; }
+function followTracks(poi, action) { /* ... (same) ... */ gameOutput.textContent += `\nThe tracks disappear.`; }
+function forageHerbs(poi, action) { /* ... (same) ... */ if (!gameOutput.textContent.includes("Acquired:")) gameOutput.textContent += `\nYou forage for useful plants...`; }
+function investigateRuins(poi, action) { /* ... (same) ... */ if (!gameOutput.textContent.includes("Acquired:")) gameOutput.textContent += `\nYou examine the ancient stones...`; }
+function searchArtifacts(poi, action) { /* ... (same) ... */ if (!gameOutput.textContent.includes("Acquired:")) gameOutput.textContent += `\nYou sift through the rubble...`; }
+function offerPrayer(poi, action) { /* ... (same) ... */ gameOutput.textContent += `\nA sense of peace washes over you.`; if (gameOutput.textContent.includes("Feeling of Peace")) removeItemFromInventory("Feeling of Peace"); }
+function meditateShrine(poi, action) { /* ... (same) ... */ gameOutput.textContent += `\nYou feel refreshed.`; }
+
+
+// Movement button event listeners
+document.getElementById('moveNorthBtn').addEventListener('click', () => movePlayer(-1, 0));
+document.getElementById('moveSouthBtn').addEventListener('click', () => movePlayer(1, 0));
+document.getElementById('moveEastBtn').addEventListener('click', () => movePlayer(0, 1));
+document.getElementById('moveWestBtn').addEventListener('click', () => movePlayer(0, -1));
+
+// Begin Game
+beginGameBtn.addEventListener('click', () => {
+    finalPartyDisplay.style.display = 'none';
+    gameArea.style.display = 'block';
+    const partyNames = selectedParty.map(char => char.name).join(', ');
+    gameIntroMessage.textContent = `Your adventure begins with: ${partyNames}!`;
+    partyStatsDisplay.innerHTML = ''; // Clear previous stats
+    selectedParty.forEach(character => {
+        const memberDiv = document.createElement('div');
+        memberDiv.classList.add('party-member-stats');
+        let statsHtml = `<h4>${character.name}</h4><ul>`;
+        allStatKeys.forEach(statKey => {
+            let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1);
+            if (statKey === "stinkRate") statLabel = "Stinkiness Rate";
+            let statValue = character.stats[statKey];
+            if (statKey === "bladderSize") statValue += " mL";
+            if (statKey === "bowelSize") statValue += " g";
+            statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`;
+        });
+        statsHtml += '</ul>';
+        let gearListHtml = '<h5>Equipped Gear:</h5><ul>';
+        gearSlots.forEach(slot => {
+            const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1); const item = character.gear[slot]; let itemName = item ? item.name : "None"; let bonuses = []; if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`); if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`); let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : ""; gearListHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`;
+        });
+        gearListHtml += '</ul>';
+        memberDiv.innerHTML = statsHtml + gearListHtml;
+        partyStatsDisplay.appendChild(memberDiv);
+    });
+
+    generateGameMap();
+    renderGameMap();
+    toggleMovementButtons(true);
+    checkAndEnterPOI();
+    if (!currentPOI) {
+        gameOutput.textContent = "You find yourself on the world map. Use N,S,E,W to explore.";
+    }
+    console.log("Game Started with party:", selectedParty, "POIs:", pointsOfInterest, "Inventory:", partyInventory);
+});
+
+// Initial state
+draftPoolArea.innerHTML = '<p>Click "Generate Draft Pool" to see available recruits.</p>';
+selectedPartyArea.innerHTML = '<p>Draft characters from the left.</p>';
