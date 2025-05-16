@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-Based RPG - Party Draft</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 950px; /* Slightly wider for potentially more stat info */
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #4a3a71;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h3 {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #6a5acd; /* SlateBlue */
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #483d8b; /* DarkSlateBlue */
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .draft-controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .draft-pool-container, .selected-party-container {
+            margin-top: 20px;
+        }
+        .character-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .character-card h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #6a5acd;
+        }
+        .character-card p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .character-card strong {
+            color: #555;
+        }
+        .character-card ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .character-card li {
+            margin-bottom: 3px;
+        }
+        .columns-container {
+            display: flex;
+            gap: 20px;
+        }
+        .draft-pool-column {
+            flex: 2;
+        }
+        .selected-party-column {
+            flex: 1;
+            background-color: #e9e4f7;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #c5b9e8;
+        }
+        .selected-party-column .character-card {
+            background-color: #fff;
+        }
+        #partyStatus {
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Text-Based RPG - Party Draft</h1>
+
+        <div class="draft-controls">
+            <label for="poolSize">Number of characters in draft pool:</label>
+            <input type="number" id="poolSize" value="10" min="5" max="20" style="width: 50px; padding: 5px; margin-right:10px;">
+            <button id="generatePoolBtn">Generate Draft Pool</button>
+            <button id="finalizePartyBtn" disabled>Finalize Party (0/3)</button>
+        </div>
+
+        <div class="columns-container">
+            <div class="draft-pool-column">
+                <h2>Available Recruits</h2>
+                <div id="draftPoolArea">
+                    <p>Click "Generate Draft Pool" to see available recruits.</p>
+                </div>
+            </div>
+            <div class="selected-party-column">
+                <h2>Your Party</h2>
+                <div id="partyStatus">Selected: 0/3</div>
+                <div id="selectedPartyArea">
+                    <p>Draft characters from the left.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="finalPartyDisplay" style="display:none; margin-top: 30px;">
+            <h2>Your Final Party!</h2>
+            <!-- Content will be populated by JavaScript -->
+        </div>
+
+    </div>
+
+    <script>
+        const namePools = {
+            ancient_china: ["Mei", "Lian", "Bao", "Jiao", "Nuo", "Ai", "Fen", "Hua", "Jia", "Lan", "Ming", "Qiu", "Rong", "Shan", "Ting", "Xiu", "Yue", "Zhen"],
+            egypt: ["Nefertari", "Merit", "Ankhesen", "Tiye", "Sitre", "Iset", "Kiya", "Mut", "Ahmose", "Baket", "Henut", "Meryt", "Nubia", "Sadeh"],
+            rome: ["Livia", "Julia", "Octavia", "Cornelia", "Antonia", "Flavia", "Claudia", "Marcia", "Valeria", "Aelia", "Domitia", "Lucilla", "Pompeia", "Tullia", "Fabia", "Porcia"],
+            medieval_europe: ["Genevieve", "Isolde", "Eleanor", "Matilda", "Adela", "Beatrice", "Blanche", "Constance", "Heloise", "Hildegard", "Joan", "Margaret", "Philippa", "Sybilla", "Agnes", "Cecily"],
+            early_1900s: ["Evelyn", "Mary", "Elizabeth", "Dorothy", "Margaret", "Helen", "Florence", "Alice", "Clara", "Grace", "Lillian", "Rose", "Violet", "Eleanor", "Edith", "Beatrice"],
+            modern: ["Alex", "Olivia", "Sophia", "Emily", "Chloe", "Maya", "Jordan", "Skyler", "Avery", "Taylor", "Zoe", "Layla", "Nova", "Kai", "Riley", "Quinn"]
+        };
+        const timePeriodKeys = Object.keys(namePools);
+        const timePeriodDisplayNames = {
+            ancient_china: "Ancient China (Noblewoman)",
+            egypt: "Ancient Egypt",
+            rome: "Ancient Rome",
+            medieval_europe: "Medieval Europe",
+            early_1900s: "Early 1900s",
+            modern: "Modern Era"
+        };
+
+        // Configuration for period-specific stat ranges
+        const periodStatConfig = {
+            ancient_china: {
+                bladderMin: 300, bladderMax: 600, // mL
+                bowelMin: 150, bowelMax: 350,     // g
+                stinkRateMin: 4, stinkRateMax: 8  // 1-10 scale
+            },
+            egypt: {
+                bladderMin: 280, bladderMax: 580,
+                bowelMin: 160, bowelMax: 380,
+                stinkRateMin: 5, stinkRateMax: 9
+            },
+            rome: {
+                bladderMin: 320, bladderMax: 620,
+                bowelMin: 140, bowelMax: 340,
+                stinkRateMin: 4, stinkRateMax: 8
+            },
+            medieval_europe: {
+                bladderMin: 250, bladderMax: 550,
+                bowelMin: 180, bowelMax: 400,
+                stinkRateMin: 6, stinkRateMax: 10
+            },
+            early_1900s: {
+                bladderMin: 350, bladderMax: 650,
+                bowelMin: 120, bowelMax: 300,
+                stinkRateMin: 3, stinkRateMax: 7
+            },
+            modern: {
+                bladderMin: 380, bladderMax: 700,
+                bowelMin: 100, bowelMax: 280,
+                stinkRateMin: 1, stinkRateMax: 5
+            }
+        };
+
+        // Stats that are NOT period-specific in their generation (still 1-10)
+        const generalStats = ['strength', 'magicPower', 'defense'];
+        // All stats for character object creation and display order
+        const allStatKeys = ['bladderSize', 'bowelSize', 'stinkRate', 'strength', 'magicPower', 'defense'];
+
+
+        let draftableCharacters = [];
+        let selectedParty = [];
+        const MAX_PARTY_SIZE = 3;
+
+        const generatePoolBtn = document.getElementById('generatePoolBtn');
+        const finalizePartyBtn = document.getElementById('finalizePartyBtn');
+        const poolSizeInput = document.getElementById('poolSize');
+        const draftPoolArea = document.getElementById('draftPoolArea');
+        const selectedPartyArea = document.getElementById('selectedPartyArea');
+        const partyStatusDiv = document.getElementById('partyStatus');
+        const finalPartyDisplay = document.getElementById('finalPartyDisplay');
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateRandomCharacter(id) {
+            const randomPeriodKey = timePeriodKeys[getRandomInt(0, timePeriodKeys.length - 1)];
+            const names = namePools[randomPeriodKey];
+            const randomName = names[getRandomInt(0, names.length - 1)];
+            const config = periodStatConfig[randomPeriodKey];
+
+            const character = {
+                id: `char_${id}_${Date.now()}`,
+                name: randomName,
+                timePeriodKey: randomPeriodKey,
+                timePeriodDisplay: timePeriodDisplayNames[randomPeriodKey],
+                stats: {},
+                appearance: `A woman from ${timePeriodDisplayNames[randomPeriodKey]}.`,
+                backstory: "Her past is shrouded in mystery, but she's ready for adventure.",
+                skills: "Versatile and adaptive."
+            };
+
+            // Period-specific stats
+            character.stats.bladderSize = getRandomInt(config.bladderMin, config.bladderMax);
+            character.stats.bowelSize = getRandomInt(config.bowelMin, config.bowelMax);
+            character.stats.stinkRate = getRandomInt(config.stinkRateMin, config.stinkRateMax);
+
+            // General stats (1-10)
+            generalStats.forEach(stat => {
+                character.stats[stat] = getRandomInt(1, 10);
+            });
+            return character;
+        }
+
+        function renderCharacterCard(character, isDraftable = true) {
+            const card = document.createElement('div');
+            card.classList.add('character-card');
+            card.dataset.characterId = character.id;
+
+            let statsHtml = '<ul>';
+            allStatKeys.forEach(statKey => {
+                let statLabel = statKey.replace(/([A-Z])/g, ' $1'); // Add space before caps
+                statLabel = statLabel.charAt(0).toUpperCase() + statLabel.slice(1);
+                let statValue = character.stats[statKey];
+
+                if (statKey === "stinkRate") statLabel = "Stinkiness Rate";
+                if (statKey === "bladderSize") statValue += " mL";
+                if (statKey === "bowelSize") statValue += " g";
+
+                statsHtml += `<li><strong>${statLabel}:</strong> ${statValue}</li>`;
+            });
+            statsHtml += '</ul>';
+
+            card.innerHTML = `
+                <h4>${character.name}</h4>
+                <p><strong>Period:</strong> ${character.timePeriodDisplay}</p>
+                <p><strong>Stats:</strong></p>
+                ${statsHtml}
+                <p><em>${character.appearance}</em></p>
+            `;
+
+            if (isDraftable) {
+                const draftButton = document.createElement('button');
+                draftButton.textContent = 'Draft this Character';
+                draftButton.onclick = () => handleDraftCharacter(character.id);
+                card.appendChild(draftButton);
+            } else {
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove from Party';
+                removeButton.style.backgroundColor = '#dc3545';
+                removeButton.onclick = () => handleRemoveCharacter(character.id);
+                card.appendChild(removeButton);
+            }
+            return card;
+        }
+
+        function displayDraftPool() {
+            draftPoolArea.innerHTML = '';
+            if (draftableCharacters.length === 0) {
+                draftPoolArea.innerHTML = '<p>No characters generated yet.</p>';
+                return;
+            }
+            draftableCharacters.forEach(char => {
+                if (!selectedParty.find(pChar => pChar.id === char.id)) {
+                    const card = renderCharacterCard(char, true);
+                    draftPoolArea.appendChild(card);
+                }
+            });
+            if (draftPoolArea.childElementCount === 0 && draftableCharacters.length > 0) {
+                draftPoolArea.innerHTML = '<p>All available recruits have been drafted or are in your party.</p>';
+            }
+        }
+
+        function displaySelectedParty() {
+            selectedPartyArea.innerHTML = '';
+            if (selectedParty.length === 0) {
+                selectedPartyArea.innerHTML = '<p>Draft characters from the left.</p>';
+            } else {
+                selectedParty.forEach(char => {
+                    const card = renderCharacterCard(char, false);
+                    selectedPartyArea.appendChild(card);
+                });
+            }
+            partyStatusDiv.textContent = `Selected: ${selectedParty.length}/${MAX_PARTY_SIZE}`;
+            finalizePartyBtn.textContent = `Finalize Party (${selectedParty.length}/${MAX_PARTY_SIZE})`;
+            finalizePartyBtn.disabled = selectedParty.length !== MAX_PARTY_SIZE;
+
+            const draftButtons = draftPoolArea.querySelectorAll('.character-card button');
+            draftButtons.forEach(btn => {
+                const card = btn.closest('.character-card');
+                if (card) {
+                    const charId = card.dataset.characterId;
+                    btn.disabled = selectedParty.find(pChar => pChar.id === charId) || selectedParty.length >= MAX_PARTY_SIZE;
+                }
+            });
+        }
+
+        function handleDraftCharacter(characterId) {
+            if (selectedParty.length >= MAX_PARTY_SIZE) {
+                alert(`You can only have ${MAX_PARTY_SIZE} characters in your party.`);
+                return;
+            }
+            const characterToAdd = draftableCharacters.find(char => char.id === characterId);
+            if (characterToAdd && !selectedParty.find(pChar => pChar.id === characterId)) {
+                selectedParty.push(characterToAdd);
+                displaySelectedParty();
+                displayDraftPool();
+            }
+        }
+
+        function handleRemoveCharacter(characterId) {
+            selectedParty = selectedParty.filter(char => char.id !== characterId);
+            displaySelectedParty();
+            displayDraftPool();
+        }
+
+        generatePoolBtn.addEventListener('click', () => {
+            const numToGenerate = parseInt(poolSizeInput.value) || 10;
+            draftableCharacters = [];
+            selectedParty = [];
+            for (let i = 0; i < numToGenerate; i++) {
+                draftableCharacters.push(generateRandomCharacter(i));
+            }
+            finalPartyDisplay.style.display = 'none';
+            document.querySelector('.columns-container').style.display = 'flex';
+            displayDraftPool();
+            displaySelectedParty();
+        });
+
+        finalizePartyBtn.addEventListener('click', () => {
+            if (selectedParty.length === MAX_PARTY_SIZE) {
+                alert("Party finalized! Let the adventure begin!");
+                console.log("Final Party:", selectedParty);
+
+                finalPartyDisplay.innerHTML = '<h2>Your Final Party!</h2>';
+                selectedParty.forEach(char => {
+                    const card = renderCharacterCard(char, false);
+                    const buttonInCard = card.querySelector('button');
+                    if (buttonInCard) buttonInCard.remove();
+                    finalPartyDisplay.appendChild(card);
+                });
+                finalPartyDisplay.style.display = 'block';
+                document.querySelector('.columns-container').style.display = 'none';
+                document.querySelector('.draft-controls').style.display = 'none';
+            } else {
+                alert(`Please select ${MAX_PARTY_SIZE} characters for your party.`);
+            }
+        });
+
+        draftPoolArea.innerHTML = '<p>Click "Generate Draft Pool" to see available recruits.</p>';
+        selectedPartyArea.innerHTML = '<p>Draft characters from the left.</p>';
+    </script>
+</body>
+</html>
