@@ -14,7 +14,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 950px; /* Slightly wider for potentially more stat info */
+            max-width: 1050px; /* Wider for more info */
             margin: 20px auto;
             background-color: #fff;
             padding: 25px;
@@ -55,9 +55,6 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        .draft-pool-container, .selected-party-container {
-            margin-top: 20px;
-        }
         .character-card {
             background-color: #f9f9f9;
             border: 1px solid #ddd;
@@ -71,7 +68,7 @@
             margin-bottom: 10px;
             color: #6a5acd;
         }
-        .character-card p {
+        .character-card p, .character-card div {
             margin: 5px 0;
             font-size: 0.9em;
         }
@@ -81,6 +78,7 @@
         .character-card ul {
             list-style-type: none;
             padding-left: 0;
+            margin-top: 5px;
         }
         .character-card li {
             margin-bottom: 3px;
@@ -106,6 +104,12 @@
             font-weight: bold;
             margin-bottom: 15px;
         }
+        .gear-section h5 {
+            margin-bottom: 5px;
+            margin-top: 10px;
+            color: #4a3a71;
+            font-size: 1em;
+        }
     </style>
 </head>
 <body>
@@ -114,7 +118,7 @@
 
         <div class="draft-controls">
             <label for="poolSize">Number of characters in draft pool:</label>
-            <input type="number" id="poolSize" value="10" min="5" max="20" style="width: 50px; padding: 5px; margin-right:10px;">
+            <input type="number" id="poolSize" value="8" min="3" max="20" style="width: 50px; padding: 5px; margin-right:10px;">
             <button id="generatePoolBtn">Generate Draft Pool</button>
             <button id="finalizePartyBtn" disabled>Finalize Party (0/3)</button>
         </div>
@@ -143,68 +147,91 @@
     </div>
 
     <script>
-        const namePools = {
-            ancient_china: ["Mei", "Lian", "Bao", "Jiao", "Nuo", "Ai", "Fen", "Hua", "Jia", "Lan", "Ming", "Qiu", "Rong", "Shan", "Ting", "Xiu", "Yue", "Zhen"],
-            egypt: ["Nefertari", "Merit", "Ankhesen", "Tiye", "Sitre", "Iset", "Kiya", "Mut", "Ahmose", "Baket", "Henut", "Meryt", "Nubia", "Sadeh"],
-            rome: ["Livia", "Julia", "Octavia", "Cornelia", "Antonia", "Flavia", "Claudia", "Marcia", "Valeria", "Aelia", "Domitia", "Lucilla", "Pompeia", "Tullia", "Fabia", "Porcia"],
-            medieval_europe: ["Genevieve", "Isolde", "Eleanor", "Matilda", "Adela", "Beatrice", "Blanche", "Constance", "Heloise", "Hildegard", "Joan", "Margaret", "Philippa", "Sybilla", "Agnes", "Cecily"],
-            early_1900s: ["Evelyn", "Mary", "Elizabeth", "Dorothy", "Margaret", "Helen", "Florence", "Alice", "Clara", "Grace", "Lillian", "Rose", "Violet", "Eleanor", "Edith", "Beatrice"],
-            modern: ["Alex", "Olivia", "Sophia", "Emily", "Chloe", "Maya", "Jordan", "Skyler", "Avery", "Taylor", "Zoe", "Layla", "Nova", "Kai", "Riley", "Quinn"]
+        const namePools = { /* (Same as before) */
+            ancient_china: ["Mei", "Lian", "Bao", "Jiao", "Nuo", "Ai", "Fen", "Hua", "Jia", "Lan"],
+            egypt: ["Nefertari", "Merit", "Ankhesen", "Tiye", "Sitre", "Iset", "Kiya", "Mut"],
+            rome: ["Livia", "Julia", "Octavia", "Cornelia", "Antonia", "Flavia", "Claudia", "Marcia"],
+            medieval_europe: ["Genevieve", "Isolde", "Eleanor", "Matilda", "Adela", "Beatrice", "Blanche", "Constance"],
+            early_1900s: ["Evelyn", "Mary", "Elizabeth", "Dorothy", "Margaret", "Helen", "Florence", "Alice"],
+            modern: ["Alex", "Olivia", "Sophia", "Emily", "Chloe", "Maya", "Jordan", "Skyler"]
         };
         const timePeriodKeys = Object.keys(namePools);
-        const timePeriodDisplayNames = {
-            ancient_china: "Ancient China (Noblewoman)",
-            egypt: "Ancient Egypt",
-            rome: "Ancient Rome",
-            medieval_europe: "Medieval Europe",
-            early_1900s: "Early 1900s",
-            modern: "Modern Era"
+        const timePeriodDisplayNames = { /* (Same as before) */
+            ancient_china: "Ancient China (Noblewoman)", egypt: "Ancient Egypt", rome: "Ancient Rome",
+            medieval_europe: "Medieval Europe", early_1900s: "Early 1900s", modern: "Modern Era"
         };
 
-        // Configuration for period-specific stat ranges
-        const periodStatConfig = {
+        const periodStatConfig = { /* (Same as before, for non-gear-derived stats) */
+            ancient_china: { bladderMin: 300, bladderMax: 600, bowelMin: 150, bowelMax: 350, stinkRateMin: 4, stinkRateMax: 8 },
+            egypt: { bladderMin: 280, bladderMax: 580, bowelMin: 160, bowelMax: 380, stinkRateMin: 5, stinkRateMax: 9 },
+            rome: { bladderMin: 320, bladderMax: 620, bowelMin: 140, bowelMax: 340, stinkRateMin: 4, stinkRateMax: 8 },
+            medieval_europe: { bladderMin: 250, bladderMax: 550, bowelMin: 180, bowelMax: 400, stinkRateMin: 6, stinkRateMax: 10 },
+            early_1900s: { bladderMin: 350, bladderMax: 650, bowelMin: 120, bowelMax: 300, stinkRateMin: 3, stinkRateMax: 7 },
+            modern: { bladderMin: 380, bladderMax: 700, bowelMin: 100, bowelMax: 280, stinkRateMin: 1, stinkRateMax: 5 }
+        };
+
+        // Base stats that are NOT period-specific or gear-derived
+        const baseStatsToRoll = ['magicPower'];
+        // All stat keys for character object creation and display order (Strength & Defense will be calculated)
+        const allStatKeys = ['bladderSize', 'bowelSize', 'stinkRate', 'magicPower', 'strength', 'defense'];
+
+        const gearSlots = ["underwear", "upper", "lower", "head", "hands", "accessory"];
+        const periodGear = {
             ancient_china: {
-                bladderMin: 300, bladderMax: 600, // mL
-                bowelMin: 150, bowelMax: 350,     // g
-                stinkRateMin: 4, stinkRateMax: 8  // 1-10 scale
+                underwear: [{name: "Silk Dudou", defense_bonus: 1}, {name: "Linen Bindings"}],
+                upper: [{name: "Embroidered Ruqun Blouse", defense_bonus: 1}, {name: "Silk Hanfu Robe", defense_bonus: 2}],
+                lower: [{name: "Layered Ruqun Skirt", defense_bonus: 1}, {name: "Silk Trousers"}],
+                head: [{name: "Ornamental Hairpins"}, {name: "Phoenix Coronet", defense_bonus: 1}, {name: "Simple Silk Headdress"}],
+                hands: [{name: "Ceremonial Dagger", strength_bonus: 1}, {name: "Ornate Fan", strength_bonus: 0}, {name: "Writing Brush"}],
+                accessory: [{name: "Jade Pendant"}, {name: "Scented Sachet"}, {name: "Embroidered Pouch"}]
             },
             egypt: {
-                bladderMin: 280, bladderMax: 580,
-                bowelMin: 160, bowelMax: 380,
-                stinkRateMin: 5, stinkRateMax: 9
+                underwear: [{name: "Linen Loincloth"}, {name: "Simple Linen Wrap"}],
+                upper: [{name: "Fine Kalasiris", defense_bonus: 1}, {name: "Beaded Net Dress", defense_bonus: 1}, {name: "Linen Shawl"}],
+                lower: [{name: "Linen Kilt"}, {name: "Sheath Skirt (part of Kalasiris)"}],
+                head: [{name: "Nemes Headdress", defense_bonus: 1}, {name: "Simple Linen Headband"}, {name: "Ceremonial Wig"}],
+                hands: [{name: "Khopesh (Small)", strength_bonus: 2}, {name: "Sistrum (Ritual Rattle)"}, {name: "Papyrus Scroll"}],
+                accessory: [{name: "Usekh Collar Necklace", defense_bonus: 1}, {name: "Gold Armlets"}, {name: "Scarab Amulet"}]
             },
             rome: {
-                bladderMin: 320, bladderMax: 620,
-                bowelMin: 140, bowelMax: 340,
-                stinkRateMin: 4, stinkRateMax: 8
+                underwear: [{name: "Subligaculum"}, {name: "Strophium Breast Band"}],
+                upper: [{name: "Linen Tunica", defense_bonus: 1}, {name: "Wool Stola", defense_bonus: 1}, {name: "Palla Shawl"}],
+                lower: [{name: "Toga (outer, implies tunic)"}, {name: "Long Tunica Skirt"}],
+                head: [{name: "Vitta Headband"}, {name: "Ornate Hairpins"}, {name: "Simple Veil"}],
+                hands: [{name: "Pugio Dagger", strength_bonus: 1}, {name: "Stylus and Wax Tablet"}, {name: "Scroll Case"}],
+                accessory: [{name: "Fibula Brooch"}, {name: "Gold Earrings"}, {name: "Signet Ring"}]
             },
             medieval_europe: {
-                bladderMin: 250, bladderMax: 550,
-                bowelMin: 180, bowelMax: 400,
-                stinkRateMin: 6, stinkRateMax: 10
+                underwear: [{name: "Linen Chemise", defense_bonus: 1}, {name: "Linen Braies"}],
+                upper: [{name: "Kirtle Gown", defense_bonus: 1}, {name: "Surcote Overgown", defense_bonus: 2}, {name: "Padded Aketon", defense_bonus: 3}],
+                lower: [{name: "Hose Stockings"}, {name: "Flowing Gown Skirt", defense_bonus: 1}],
+                head: [{name: "Wimple and Veil"}, {name: "Coif Cap"}, {name: "Steel Cap", defense_bonus: 2}, {name: "Simple Hood"}],
+                hands: [{name: "Rondel Dagger", strength_bonus: 2}, {name: "Shortsword", strength_bonus: 3, defense_bonus: 1}, {name: "Book of Hours"}, {name: "Staff", strength_bonus: 1}],
+                accessory: [{name: "Leather Belt with Pouch"}, {name: "Rosary Beads"}, {name: "Cloak Clasp"}]
             },
             early_1900s: {
-                bladderMin: 350, bladderMax: 650,
-                bowelMin: 120, bowelMax: 300,
-                stinkRateMin: 3, stinkRateMax: 7
+                underwear: [{name: "Corset & Chemise Set"}, {name: "Knickers & Camisole"}],
+                upper: [{name: "High-Neck Blouse"}, {name: "Tailored Jacket", defense_bonus: 1}, {name: "Walking Suit Bodice"}],
+                lower: [{name: "Long Gored Skirt"}, {name: "Ankle-length Day Skirt"}],
+                head: [{name: "Wide-brimmed Hat"}, {name: "Bonnet"}, {name: "Cloche Hat"}],
+                hands: [{name: "Hat Pin (Makeshift)", strength_bonus: 1}, {name: "Small Derringer Pistol", strength_bonus: 2}, {name: "Book"}, {name: "Knitting Needles"}],
+                accessory: [{name: "Long Gloves"}, {name: "Parasol"}, {name: "Reticule Handbag"}, {name: "Locket"}]
             },
             modern: {
-                bladderMin: 380, bladderMax: 700,
-                bowelMin: 100, bowelMax: 280,
-                stinkRateMin: 1, stinkRateMax: 5
+                underwear: [{name: "Bra & Panties Set"}, {name: "Bodysuit"}, {name: "Sports Attire"}],
+                upper: [{name: "T-Shirt"}, {name: "Blouse"}, {name: "Leather Jacket", defense_bonus: 2}, {name: "Hoodie", defense_bonus: 1}],
+                lower: [{name: "Jeans", defense_bonus: 1}, {name: "Skirt"}, {name: "Tactical Pants", defense_bonus: 1}],
+                head: [{name: "Baseball Cap"}, {name: "Beanie"}, {name: "Combat Helmet", defense_bonus: 3}, {name: "Sunglasses"}],
+                hands: [{name: "Pocket Knife", strength_bonus: 1}, {name: "Taser", strength_bonus: 1}, {name: "Pepper Spray"}, {name: "Empty Hands"} , {name: "Heavy Wrench", strength_bonus: 2}],
+                accessory: [{name: "Smartphone"}, {name: "Smartwatch"}, {name: "Backpack"}, {name: "Messenger Bag"}]
             }
         };
-
-        // Stats that are NOT period-specific in their generation (still 1-10)
-        const generalStats = ['strength', 'magicPower', 'defense'];
-        // All stats for character object creation and display order
-        const allStatKeys = ['bladderSize', 'bowelSize', 'stinkRate', 'strength', 'magicPower', 'defense'];
-
 
         let draftableCharacters = [];
         let selectedParty = [];
         const MAX_PARTY_SIZE = 3;
 
+        // DOM Elements
         const generatePoolBtn = document.getElementById('generatePoolBtn');
         const finalizePartyBtn = document.getElementById('finalizePartyBtn');
         const poolSizeInput = document.getElementById('poolSize');
@@ -217,11 +244,17 @@
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
+        function getRandomElement(arr) {
+            if (!arr || arr.length === 0) return { name: "None", defense_bonus: 0, strength_bonus: 0 }; // Default gear item
+            return arr[getRandomInt(0, arr.length - 1)];
+        }
+
         function generateRandomCharacter(id) {
-            const randomPeriodKey = timePeriodKeys[getRandomInt(0, timePeriodKeys.length - 1)];
+            const randomPeriodKey = getRandomElement(timePeriodKeys);
             const names = namePools[randomPeriodKey];
-            const randomName = names[getRandomInt(0, names.length - 1)];
+            const randomName = getRandomElement(names).name; // If names also became objects, adjust here
             const config = periodStatConfig[randomPeriodKey];
+            const gearConfig = periodGear[randomPeriodKey];
 
             const character = {
                 id: `char_${id}_${Date.now()}`,
@@ -229,20 +262,34 @@
                 timePeriodKey: randomPeriodKey,
                 timePeriodDisplay: timePeriodDisplayNames[randomPeriodKey],
                 stats: {},
+                gear: {},
                 appearance: `A woman from ${timePeriodDisplayNames[randomPeriodKey]}.`,
-                backstory: "Her past is shrouded in mystery, but she's ready for adventure.",
-                skills: "Versatile and adaptive."
+                backstory: "Her past is shrouded in mystery.",
+                skills: "Versatile."
             };
 
-            // Period-specific stats
+            // Period-specific stats (Bladder, Bowel, StinkRate)
             character.stats.bladderSize = getRandomInt(config.bladderMin, config.bladderMax);
             character.stats.bowelSize = getRandomInt(config.bowelMin, config.bowelMax);
             character.stats.stinkRate = getRandomInt(config.stinkRateMin, config.stinkRateMax);
 
-            // General stats (1-10)
-            generalStats.forEach(stat => {
-                character.stats[stat] = getRandomInt(1, 10);
+            // Base stats to roll (MagicPower)
+            baseStatsToRoll.forEach(stat => {
+                character.stats[stat] = getRandomInt(1, 10); // Assuming magic power is 1-10
             });
+
+            // Initialize gear-derived stats
+            character.stats.strength = 0;
+            character.stats.defense = 0;
+
+            // Assign Gear and calculate bonuses
+            gearSlots.forEach(slot => {
+                const selectedGearItem = getRandomElement(gearConfig[slot]);
+                character.gear[slot] = selectedGearItem;
+                character.stats.defense += (selectedGearItem.defense_bonus || 0);
+                character.stats.strength += (selectedGearItem.strength_bonus || 0);
+            });
+
             return character;
         }
 
@@ -253,23 +300,33 @@
 
             let statsHtml = '<ul>';
             allStatKeys.forEach(statKey => {
-                let statLabel = statKey.replace(/([A-Z])/g, ' $1'); // Add space before caps
-                statLabel = statLabel.charAt(0).toUpperCase() + statLabel.slice(1);
-                let statValue = character.stats[statKey];
-
+                let statLabel = statKey.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + statKey.replace(/([A-Z])/g, ' $1').slice(1);
                 if (statKey === "stinkRate") statLabel = "Stinkiness Rate";
+                let statValue = character.stats[statKey];
                 if (statKey === "bladderSize") statValue += " mL";
                 if (statKey === "bowelSize") statValue += " g";
-
-                statsHtml += `<li><strong>${statLabel}:</strong> ${statValue}</li>`;
+                statsHtml += `<li><strong>${statLabel}:</strong> ${statValue !== undefined ? statValue : 'N/A'}</li>`;
             });
             statsHtml += '</ul>';
+
+            let gearHtml = '<div class="gear-section"><h5>Gear:</h5><ul>';
+            gearSlots.forEach(slot => {
+                const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1);
+                const item = character.gear[slot];
+                let itemName = item ? item.name : "None";
+                let bonuses = [];
+                if (item && item.defense_bonus) bonuses.push(`Def: ${item.defense_bonus}`);
+                if (item && item.strength_bonus) bonuses.push(`Str: ${item.strength_bonus}`);
+                let bonusString = bonuses.length > 0 ? ` (${bonuses.join(', ')})` : "";
+                gearHtml += `<li><strong>${slotLabel}:</strong> ${itemName}${bonusString}</li>`;
+            });
+            gearHtml += '</ul></div>';
 
             card.innerHTML = `
                 <h4>${character.name}</h4>
                 <p><strong>Period:</strong> ${character.timePeriodDisplay}</p>
-                <p><strong>Stats:</strong></p>
-                ${statsHtml}
+                <div><strong>Stats:</strong>${statsHtml}</div>
+                ${gearHtml}
                 <p><em>${character.appearance}</em></p>
             `;
 
@@ -288,11 +345,16 @@
             return card;
         }
 
+        // --- displayDraftPool, displaySelectedParty, handleDraftCharacter, handleRemoveCharacter ---
+        // --- generatePoolBtn, finalizePartyBtn event listeners ---
+        // (These functions remain largely the same as in the previous version, their core logic
+        // for managing arrays and DOM updates doesn't need to change for this feature.
+        // The key is that they call renderCharacterCard which now handles the new gear and stats.)
+
         function displayDraftPool() {
             draftPoolArea.innerHTML = '';
             if (draftableCharacters.length === 0) {
-                draftPoolArea.innerHTML = '<p>No characters generated yet.</p>';
-                return;
+                draftPoolArea.innerHTML = '<p>No characters generated yet.</p>'; return;
             }
             draftableCharacters.forEach(char => {
                 if (!selectedParty.find(pChar => pChar.id === char.id)) {
@@ -331,8 +393,7 @@
 
         function handleDraftCharacter(characterId) {
             if (selectedParty.length >= MAX_PARTY_SIZE) {
-                alert(`You can only have ${MAX_PARTY_SIZE} characters in your party.`);
-                return;
+                alert(`You can only have ${MAX_PARTY_SIZE} characters in your party.`); return;
             }
             const characterToAdd = draftableCharacters.find(char => char.id === characterId);
             if (characterToAdd && !selectedParty.find(pChar => pChar.id === characterId)) {
@@ -349,7 +410,7 @@
         }
 
         generatePoolBtn.addEventListener('click', () => {
-            const numToGenerate = parseInt(poolSizeInput.value) || 10;
+            const numToGenerate = parseInt(poolSizeInput.value) || 8;
             draftableCharacters = [];
             selectedParty = [];
             for (let i = 0; i < numToGenerate; i++) {
@@ -381,8 +442,10 @@
             }
         });
 
+        // Initial state
         draftPoolArea.innerHTML = '<p>Click "Generate Draft Pool" to see available recruits.</p>';
         selectedPartyArea.innerHTML = '<p>Draft characters from the left.</p>';
+
     </script>
 </body>
 </html>
