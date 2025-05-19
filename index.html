@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-Based RPG - Modular (No Slashes)</title>
+    <link rel="stylesheet" href="style.css"> <!-- CSS moved to style.css -->
+</head>
+<body>
+    <div class="container">
+        <h1>Text-Based RPG - Modular Structure</h1>
+
+        <div id="draftingInterface">
+            <div class="draft-controls">
+                <label for="poolSize">Number of characters in draft pool:</label>
+                <input type="number" id="poolSize" value="8" min="3" max="20" style="width: 50px; padding: 5px; margin-right:10px;">
+                <button id="generatePoolBtn">Generate Draft Pool</button>
+                <button id="finalizePartyBtn" disabled>Finalize Party (0/3)</button>
+            </div>
+            <div class="columns-container">
+                <div class="draft-pool-column"><h2>Available Recruits</h2><div id="draftPoolArea"><p>Click "Generate Draft Pool"...</p></div></div>
+                <div class="selected-party-column"><h2>Your Party</h2><div id="partyStatus">Selected: 0/3</div><div id="selectedPartyArea"><p>Draft characters...</p></div></div>
+            </div>
+        </div>
+
+        <div id="finalPartyDisplay" style="display:none;" class="final-party-controls">
+            <h2>Your Final Party!</h2>
+            <div id="finalPartyCardsContainer" style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;"></div>
+            <button id="beginGameBtn" class="positive-action" style="margin-top:20px;">Begin Your Adventure!</button>
+        </div>
+
+        <div id="gameArea" style="display:none;">
+             <h2>The Adventure Begins!</h2>
+            <p id="gameIntroMessage" style="text-align:center; margin-bottom: 10px;"></p>
+            <p style="text-align:center; margin-bottom: 20px;"><strong>Party Gold: <span id="partyGoldDisplay">0</span></strong></p>
+            <div id="partyStatsDisplay"></div>
+            <div id="mapContainer">
+                <pre id="mapDisplay">Map will appear here...</pre>
+                <div class="movement-controls">
+                    <button id="moveNorthBtn">N</button><br/>
+                    <button id="moveWestBtn">W</button>
+                    <span style="display: inline-block; width: 50px;"></span>
+                    <button id="moveEastBtn">E</button><br/>
+                    <button id="moveSouthBtn">S</button>
+                </div>
+                <div id="gameControls">
+                    <button id="toggleInventoryBtn">Inventory</button>
+                    <button id="relieveSelfBtn">Relieve Self (Wild)</button>
+                </div>
+            </div>
+            <div id="shopInterface" style="display:none;"></div>
+            <div id="combatArea" style="display:none;">
+                <h3>Combat!</h3>
+                <div class="enemy-info">
+                    <p><strong>Enemy:</strong> <span id="enemyName"></span></p>
+                    <p><strong>HP:</strong> <span id="enemyHP"></span>
+                        <span class="hp-bar-container"><span id="enemyHPBar" class="hp-bar"></span></span>
+                    </p>
+                </div>
+                <div class="combat-party-info">
+                    <h4>Your Party:</h4>
+                    <div id="combatPartyStatus"></div>
+                </div>
+                <div id="combatActions"></div>
+            </div>
+            <div id="gameOutput">Game messages will appear here...</div>
+            <div id="poiActionsContainer"></div>
+        </div>
+
+        <div id="inventoryPanel" style="display:none;">
+            <h3>Party Inventory</h3>
+            <ul id="inventoryList"></ul>
+            <button id="closeInventoryBtn" style="display:block; margin: 15px auto 0;">Close</button>
+        </div>
+    </div>
+
+    <!-- Data Files -->
+    <script src="js/data_names.js"></script>
+    <script src="js/data_periods.js"></script>
+    <script src="js/data_gear.js"></script>
+    <script src="js/data_pois.js"></script>
+    <script src="js/data_enemies.js"></script>
+
+    <!-- Core Logic Files -->
+    <script src="js/core_main.js"></script>
+    <script src="js/core_character.js"></script>
+    <script src="js/core_needs.js"></script>
+    <script src="js/core_inventory.js"></script>
+    <script src="js/core_map.js"></script>
+    <script src="js/core_shop.js"></script>
+    <script src="js/core_combat.js"></script>
+
+    <!-- UI Logic Files -->
+    <script src="js/ui_draft.js"></script>
+    <script src="js/ui_game.js"></script>
+    <script src="js/ui_inventory.js"></script>
+    <script src="js/ui_shop.js"></script>
+    <script src="js/ui_combat.js"></script>
+
+    <!-- Initialization Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDrafting(); // Expected to be in ui_draft.js
+            initializeGameControls(); // Expected to be in core_main.js
+            // Any other one-time setup after DOM is ready
+            console.log("DOM fully loaded and parsed, game initialized.");
+        });
+    </script>
+</body>
+</html>
